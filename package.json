@@ -6,7 +6,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git@github.com:hanielsf/izing.open.io.git"
+    "url": "git@github.com:hanielsf/Boomer.git"
   },
   "scripts": {
     "release": "semantic-release --no-ci",
