@@ -1,6 +1,6 @@
 {
   "name": "boomer.artfacas.online",
-  "version": "1.0.1",
+  "version": "3.0.1",
   "description": "Boomer - Sistema de Atendimentos Multicanal",
   "main": "index.js",
   "private": true,
