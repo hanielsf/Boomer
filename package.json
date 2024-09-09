@@ -1,6 +1,6 @@
 {
   "name": "boomer.artfacas.online",
-  "version": "3.0.3",
+  "version": "4.0.1",
   "description": "Boomer - Sistema de Atendimentos Multicanal",
   "main": "index.js",
   "private": true,
@@ -12,7 +12,7 @@
     "release": "semantic-release --no-ci",
     "husk": "husky install"
   },
-  "author": "Haniel S.F (haniel.cesa@gmail.com)",
+  "author": "Durans (lumardyelson@gmail.com)",
   "license": "AGPL-3.0-or-later",
   "dependencies": {},
   "devDependencies": {
