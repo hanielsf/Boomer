@@ -127,9 +127,9 @@ module.exports = function (ctx) {
       workboxPluginMode: 'GenerateSW', // 'GenerateSW' or 'InjectManifest'
       workboxOptions: {maximumFileSizeToCacheInBytes: 5000000,}, // only for GenerateSW
       manifest: {
-        name: 'IZING',
-        short_name: 'IZING',
-        description: 'Bot Multi-atendimento para whatsapp',
+        name: 'BOOMER',
+        short_name: 'BOOMER',
+        description: 'Boomer - Gestão Atendimento WhatsApp',
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#ffffff',
@@ -193,7 +193,7 @@ module.exports = function (ctx) {
 
       builder: {
         // https://www.electron.build/configuration/configuration
-        appId: 'IZING'
+        appId: 'BOOMER'
       },
 
       // More info: https://quasar.dev/quasar-cli/developing-electron-apps/node-integration
