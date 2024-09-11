@@ -8,6 +8,7 @@ const routes = [
       { path: '', component: () => import('pages/dashboard/Index.vue') },
       { path: '/home', name: 'home-dashboard', component: () => import('pages/dashboard/Index.vue') },
       { path: '/painel-atendimentos', name: 'painel-atendimentos', component: () => import('pages/dashboard/DashTicketsFilas.vue') },
+      { path: '/kanban', name: 'kanban', component: () => import('pages/kanban/Index.vue') },
       { path: '/sessoes', name: 'sessoes', component: () => import('pages/sessaoWhatsapp/Index.vue') },
       { path: '/contatos', name: 'contatos', component: () => import('pages/contatos/Index.vue') },
       { path: '/usuarios', name: 'usuarios', component: () => import('pages/usuarios/Index.vue') },
@@ -108,7 +109,7 @@ const routes = [
     path: '/login',
     name: 'login',
     component: () => import('pages/Login.vue')
-  }
+  },
 ]
 
 export default routes

@@ -286,6 +286,12 @@ const objMenu = [
     routeName: 'atendimento'
   },
   {
+    title: 'Kanban',
+    caption: 'Visualização Kanban dos atendimentos',
+    icon: 'mdi-view-column',
+    routeName: 'kanban'
+  },
+  {
     title: 'Contatos',
     caption: 'Lista de contatos',
     icon: 'mdi-card-account-mail',
