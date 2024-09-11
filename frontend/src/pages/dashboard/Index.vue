@@ -228,6 +228,24 @@
   </div>
 </template>
 
+<template>
+  <div>
+    <h1>Dashboard Kanban</h1>
+    <Kanban />
+  </div>
+</template>
+
+<script>
+import Kanban from '@/components/Kanban.vue';
+
+export default {
+  components: {
+    Kanban
+  }
+};
+</script>
+
+
 <script>
 import { groupBy } from 'lodash'
 import { ListarFilas } from 'src/service/filas'
