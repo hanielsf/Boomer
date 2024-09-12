@@ -56,8 +56,8 @@
             name="mdi-account-circle"
             color="grey-8" />
         </q-avatar>
-
       </q-item-section>
+      
       <q-item-section id="ListItemsTicket">
         <q-item-label class="text-bold"
           lines="1">
@@ -117,10 +117,9 @@
             size="10px"
             class="q-mr-md text-bold" />
         </q-item-label>
-        <!-- <span class="absolute-bottom-right" v-if="ticket.unreadMessages">
-          <q-badge style="font-size: .8em; border-radius: 10px;" class="q-py-xs" dense text-color="white" color="green" :label="ticket.unreadMessages" />
-        </span> -->
-        <q-item-section avatar class="absolute-right q-pr-xs">
+      </q-item-section>
+      
+      <q-item-section side>
         <q-btn flat
           @click="espiarAtendimento(ticket)"
           push
@@ -145,12 +144,10 @@
             Espiar
           </q-tooltip>
         </q-btn>
-
       </q-item-section>
     </q-item>
     <q-separator color="grey-2"
       inset="item" />
-    <!-- <q-separator /> -->
   </q-list>
 </template>
 
@@ -242,7 +239,6 @@ export default {
 </script>
 
 <style lang="sass">
-
 .relative-container
   position: relative
 
@@ -267,20 +263,17 @@ img:after
   color: transparent
 
 .ticket-active-item
-  // border: 2px solid rgb(21, 120, 173)
-  // border-left: 3px solid $light //rgb(21, 120, 173)
   border-radius: 0
   position: relative
   height: 100%
-  background: $blue-1 //$active-item-ticket
-  // background-color: #e6ebf5
+  background: $blue-1
 
 #ListItemsTicket
   .q-item__label + .q-item__label
     margin-top: 1.5px
 
 #item-ticket-houve:hover
-  background: $blue-1 //$active-item-ticket
+  background: $blue-1
   transition: all .2s
 
 .primary

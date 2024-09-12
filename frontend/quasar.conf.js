@@ -78,6 +78,14 @@ module.exports = function (ctx) {
             preventExtract: true
           }
         })
+
+        // Adicione esta nova regra para suportar arquivos JSX
+        cfg.module.rules.push({
+          test: /\.jsx$/,
+          loader: 'babel-loader',
+          exclude: /node_modules/
+        })
+
         cfg.devtool = 'source-map'
       }
     },
