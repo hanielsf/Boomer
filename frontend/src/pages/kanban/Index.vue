@@ -8,6 +8,38 @@
       </div>
       <div ref="kanbanContainer"></div>
     </q-page>
+
+    <q-dialog v-model="showTicketDetails" persistent>
+      <q-card style="min-width: 350px">
+        <q-card-section>
+          <div class="text-h6">Detalhes do Ticket #{{ selectedTicket?.id }}</div>
+        </q-card-section>
+
+        <q-card-section v-if="selectedTicket">
+          <p><strong>Contato:</strong> {{ selectedTicket.contact?.name || 'Nome não disponível' }}</p>
+          <p><strong>Última Mensagem:</strong> {{ selectedTicket.lastMessage }}</p>
+          <p><strong>Prioridade:</strong> {{ selectedTicket.priority }}</p>
+          <p><strong>Responsável:</strong> {{ selectedTicket.assignee }}</p>
+          <p><strong>Status:</strong> {{ selectedTicket.status }}</p>
+          <div>
+            <strong>Tags:</strong>
+            <q-chip
+              v-for="tag in selectedTicket.tags"
+              :key="tag.id"
+              :style="{ backgroundColor: tag.color, color: 'white' }"
+              size="sm"
+              class="q-ma-xs"
+            >
+              {{ tag.tag }}
+            </q-chip>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Fechar" color="primary" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
   <div v-else>
     <q-page class="flex flex-center">
@@ -17,7 +49,7 @@
 </template>
 
 <script>
-import { defineComponent, onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import { defineComponent, onMounted, onBeforeUnmount, ref } from 'vue';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import KanbanBoard from './KanbanBoard.jsx';
@@ -32,6 +64,8 @@ export default defineComponent({
     const tickets = ref([]);
     const etiquetas = ref([]);
     const kanbanContainer = ref(null);
+    const selectedTicket = ref(null);
+    const showTicketDetails = ref(false);
     let root = null;
     let socket = null;
 
@@ -50,11 +84,15 @@ export default defineComponent({
         status: ['open', 'pending'],
         showAll: true,
         includeNotQueueDefined: true,
-        includeTags: true // Adicionamos este parâmetro para incluir informações das tags
+        includeTags: true
       };
       try {
         const { data } = await ConsultarTickets(params);
-        tickets.value = data.tickets;
+        tickets.value = data.tickets.map(ticket => ({
+          ...ticket,
+          priority: getPriority(ticket),
+          assignee: getAssignee(ticket)
+        }));
       } catch (error) {
         console.error('Erro ao buscar tickets:', error);
       }
@@ -67,6 +105,17 @@ export default defineComponent({
       } catch (error) {
         console.error('Erro ao buscar etiquetas:', error);
       }
+    };
+
+    const getPriority = (ticket) => {
+      const waitTime = new Date() - new Date(ticket.createdAt);
+      if (waitTime > 24 * 60 * 60 * 1000) return 'Alta';
+      if (waitTime > 12 * 60 * 60 * 1000) return 'Média';
+      return 'Baixa';
+    };
+
+    const getAssignee = (ticket) => {
+      return ticket.assignedUser ? ticket.assignedUser.name : 'Não atribuído';
     };
 
     const renderKanbanBoard = () => {
@@ -88,7 +137,6 @@ export default defineComponent({
       try {
         const userId = localStorage.getItem('userId');
         await AtualizarStatusTicketTag(ticketId, newTagId, userId);
-        // Atualizamos o estado local para refletir a mudança imediatamente
         const updatedTickets = tickets.value.map(ticket => {
           if (ticket.id === ticketId) {
             return {
@@ -106,11 +154,8 @@ export default defineComponent({
     };
 
     const handleTicketClick = (ticket) => {
-      if (this.$q.screen.lt.md && ticket.status !== 'pending') {
-        this.$root.$emit('infor-cabecalo-chat:acao-menu');
-      }
-      this.$store.commit('SET_HAS_MORE', true);
-      this.$store.dispatch('AbrirChatMensagens', ticket);
+      selectedTicket.value = ticket;
+      showTicketDetails.value = true;
     };
 
     const setupWebSocket = () => {
@@ -123,7 +168,7 @@ export default defineComponent({
 
       socket.on(`${tenantId}:ticket`, (data) => {
         if (data.action === 'update' || data.action === 'create' || data.action === 'delete') {
-          fetchData(); // Atualizamos os dados quando houver mudanças
+          fetchData();
         }
       });
     };
@@ -145,15 +190,13 @@ export default defineComponent({
       }
     });
 
-    watch([tickets, etiquetas], () => {
-      renderKanbanBoard();
-    });
-
     return {
       userProfile,
       kanbanContainer,
       handleTicketMove,
-      handleTicketClick
+      handleTicketClick,
+      selectedTicket,
+      showTicketDetails
     };
   }
 });

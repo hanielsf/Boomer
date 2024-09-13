@@ -1,8 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import './KanbanBoard.css';
+import { Inbox, Clock, Coffee, CheckCircle, Search, Filter, X, User, Calendar } from 'lucide-react';
 
 const KanbanBoard = ({ tickets, tags, onTicketMove, onTicketClick }) => {
   const [columns, setColumns] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState({ priority: '', assignee: '' });
+
+  const getColumnIcon = (columnId) => {
+    switch(columnId) {
+      case 'inbox': return <Inbox size={18} />;
+      case 'not-started': return <Clock size={18} />;
+      case 'in-progress': return <Coffee size={18} />;
+      case 'done': return <CheckCircle size={18} />;
+      default: return null;
+    }
+  };
 
   const initializeColumns = useCallback(() => {
     const initialColumns = tags.reduce((acc, tag) => {
@@ -40,6 +54,19 @@ const KanbanBoard = ({ tickets, tags, onTicketMove, onTicketClick }) => {
   useEffect(() => {
     initializeColumns();
   }, [initializeColumns]);
+
+  const filteredTickets = useMemo(() => {
+    return tickets.filter(ticket => {
+      const matchesSearch = ticket.id.toString().includes(searchTerm) ||
+                            ticket.contact?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            ticket.lastMessage.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesPriority = !filters.priority || ticket.priority === filters.priority;
+      const matchesAssignee = !filters.assignee || ticket.assignee === filters.assignee;
+
+      return matchesSearch && matchesPriority && matchesAssignee;
+    });
+  }, [tickets, searchTerm, filters]);
 
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
@@ -100,87 +127,147 @@ const KanbanBoard = ({ tickets, tags, onTicketMove, onTicketClick }) => {
     }
   };
 
-  const renderTicket = (ticket, provided) => (
-    <div
-      ref={provided.innerRef}
-      {...provided.draggableProps}
-      {...provided.dragHandleProps}
-      onClick={() => onTicketClick(ticket)}
-      style={{
-        backgroundColor: 'white',
-        marginBottom: '0.5rem',
-        padding: '0.5rem',
-        borderRadius: '0.25rem',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
-        cursor: 'pointer',
-        ...provided.draggableProps.style
-      }}
-    >
-      <div style={{ fontWeight: 'bold' }}>#{ticket.id}</div>
-      <div>{ticket.contact?.name || 'Nome não disponível'}</div>
-      <div style={{ fontSize: '0.8em', color: '#666' }}>{ticket.lastMessage}</div>
-      <div style={{ fontSize: '0.8em', color: '#666' }}>Status: {ticket.status}</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-        {ticket.tags && ticket.tags.map(tag => (
-          <span key={tag.id} style={{
-            backgroundColor: tag.color,
-            color: 'white',
-            padding: '0.1rem 0.3rem',
-            borderRadius: '0.25rem',
-            fontSize: '0.7em',
-            marginRight: '0.2rem',
-            marginBottom: '0.2rem'
-          }}>
-            {tag.tag}
-          </span>
-        ))}
+  const getTicketColor = (ticket) => {
+    switch(ticket.priority) {
+      case 'Alta': return '#FF4136';
+      case 'Média': return '#FF851B';
+      case 'Baixa': return '#2ECC40';
+      default: return '#7FDBFF';
+    }
+  };
+
+  const renderTicket = (ticket, provided) => {
+    const ticketColor = getTicketColor(ticket);
+    return (
+      <div
+        ref={provided.innerRef}
+        {...provided.draggableProps}
+        {...provided.dragHandleProps}
+        onClick={() => onTicketClick(ticket)}
+        className="ticket"
+        style={{
+          ...provided.draggableProps.style,
+          borderLeft: `5px solid ${ticketColor}`,
+        }}
+      >
+        <div className="ticket-header">
+          <span className="ticket-id">#{ticket.id}</span>
+          <span className="ticket-priority" style={{ backgroundColor: ticketColor }}>{ticket.priority}</span>
+        </div>
+        <div className="ticket-content">
+          <div className="ticket-title">{ticket.contact?.name || 'Nome não disponível'}</div>
+          <div className="ticket-message">{ticket.lastMessage}</div>
+        </div>
+        <div className="ticket-footer">
+          <div className="ticket-assignee">
+            <User size={14} />
+            <span>{ticket.assignee}</span>
+          </div>
+          <div className="ticket-tags">
+            {ticket.tags && ticket.tags.map(tag => (
+              <span key={tag.id} className="ticket-tag" style={{ backgroundColor: tag.color }}>
+                {tag.tag}
+              </span>
+            ))}
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <div style={{ display: 'flex', overflowX: 'auto', padding: '1rem', gap: '1rem' }}>
-        {Object.values(columns).map(column => (
-          <Droppable key={column.id} droppableId={column.id.toString()}>
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                style={{
-                  background: '#f0f0f0',
-                  padding: '0.5rem',
-                  borderRadius: '0.25rem',
-                  minWidth: '250px',
-                  maxWidth: '250px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.5rem'
-                }}
-              >
-                <h3 style={{ fontWeight: 'bold', marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
-                  <div style={{ width: '1rem', height: '1rem', borderRadius: '50%', marginRight: '0.5rem', backgroundColor: column.color }}></div>
-                  {column.title}
-                  <span style={{ marginLeft: '0.5rem', padding: '0.25rem 0.5rem', backgroundColor: '#e0e0e0', borderRadius: '0.25rem' }}>
-                    {column.ticketIds.length}
-                  </span>
-                </h3>
-                {column.ticketIds.map((ticketId, index) => {
-                  const ticket = tickets.find(t => t.id.toString() === ticketId.toString());
-                  if (!ticket) return null;
-                  return (
-                    <Draggable key={ticketId} draggableId={ticketId.toString()} index={index}>
-                      {(provided) => renderTicket(ticket, provided)}
-                    </Draggable>
-                  );
-                })}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        ))}
+    <div className="kanban-board">
+      <div className="kanban-filters">
+        <div className="search-container">
+          <Search size={18} className="search-icon" />
+          <input
+            type="text"
+            placeholder="Buscar tickets..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
+        <select
+          value={filters.priority}
+          onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
+          className="filter-select"
+        >
+          <option value="">Todas as prioridades</option>
+          <option value="Alta">Alta</option>
+          <option value="Média">Média</option>
+          <option value="Baixa">Baixa</option>
+        </select>
+        <select
+          value={filters.assignee}
+          onChange={(e) => setFilters(prev => ({ ...prev, assignee: e.target.value }))}
+          className="filter-select"
+        >
+          <option value="">Todos os responsáveis</option>
+          {/* Adicione opções para os responsáveis aqui */}
+        </select>
       </div>
-    </DragDropContext>
+      {(searchTerm || filters.priority || filters.assignee) && (
+        <div className="active-filters">
+          Filtros ativos:
+          {searchTerm && (
+            <span className="filter-tag">
+              Busca: {searchTerm}
+              <X size={14} onClick={() => setSearchTerm('')} className="remove-filter" />
+            </span>
+          )}
+          {filters.priority && (
+            <span className="filter-tag">
+              Prioridade: {filters.priority}
+              <X size={14} onClick={() => setFilters(prev => ({ ...prev, priority: '' }))} className="remove-filter" />
+            </span>
+          )}
+          {filters.assignee && (
+            <span className="filter-tag">
+              Responsável: {filters.assignee}
+              <X size={14} onClick={() => setFilters(prev => ({ ...prev, assignee: '' }))} className="remove-filter" />
+            </span>
+          )}
+        </div>
+      )}
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="kanban-columns">
+          {Object.values(columns).map(column => (
+            <Droppable key={column.id} droppableId={column.id.toString()}>
+              {(provided) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="kanban-column"
+                >
+                  <h3 className="column-header" style={{ color: column.color }}>
+                    {getColumnIcon(column.id)}
+                    <span>{column.title}</span>
+                    <span className="column-count" style={{ backgroundColor: column.color }}>
+                      {column.ticketIds.filter(id => filteredTickets.some(ticket => ticket.id.toString() === id.toString())).length}
+                    </span>
+                  </h3>
+                  <div className="column-content">
+                    {column.ticketIds
+                      .filter(id => filteredTickets.some(ticket => ticket.id.toString() === id.toString()))
+                      .map((ticketId, index) => {
+                        const ticket = tickets.find(t => t.id.toString() === ticketId.toString());
+                        if (!ticket) return null;
+                        return (
+                          <Draggable key={ticketId} draggableId={ticketId.toString()} index={index}>
+                            {(provided) => renderTicket(ticket, provided)}
+                          </Draggable>
+                        );
+                      })}
+                    {provided.placeholder}
+                  </div>
+                </div>
+              )}
+            </Droppable>
+          ))}
+        </div>
+      </DragDropContext>
+    </div>
   );
 };
 

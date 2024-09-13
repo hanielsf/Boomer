@@ -25,6 +25,7 @@
     "drawflow": "0.0.59",
     "js-base64": "^3.7.5",
     "lodash": "^4.17.21",
+    "lucide-react": "^0.441.0",
     "mic-recorder-to-mp3": "^2.2.2",
     "printd": "^1.6.0",
     "qrcode.vue": "^1.7.0",
