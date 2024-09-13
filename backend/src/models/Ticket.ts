@@ -7,6 +7,7 @@ import {
   PrimaryKey,
   ForeignKey,
   BelongsTo,
+  BelongsToMany,
   HasMany,
   AutoIncrement,
   Default,
@@ -19,6 +20,8 @@ import { format } from "date-fns";
 import Contact from "./Contact";
 import Message from "./Message";
 import User from "./User";
+import Tags from "./Tag";
+import TicketTags from "./TicketTags";
 import Whatsapp from "./Whatsapp";
 import AutoReply from "./AutoReply";
 import StepsReply from "./StepsReply";
@@ -162,6 +165,9 @@ class Ticket extends Model<Ticket> {
   @BelongsTo(() => Tenant)
   tenant: Tenant;
 
+  @BelongsToMany(() => Tags, () => TicketTags)
+  tags: Tags[];
+
   @HasMany(() => MessagesOffLine)
   messagesOffLine: MessagesOffLine[];
 
@@ -178,6 +184,9 @@ class Ticket extends Model<Ticket> {
     const id = this.getDataValue("id");
     return `${formatDate}${id}`;
   }
+
+  // Adicione esta declaração de método
+  setTags!: (tags: Tags[]) => Promise<void>;
 }
 
 export default Ticket;

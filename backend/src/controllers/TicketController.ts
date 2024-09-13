@@ -11,6 +11,7 @@ import ListTicketsService from "../services/TicketServices/ListTicketsService";
 import ShowLogTicketService from "../services/TicketServices/ShowLogTicketService";
 import ShowTicketService from "../services/TicketServices/ShowTicketService";
 import UpdateTicketService from "../services/TicketServices/UpdateTicketService";
+import UpdateTicketTagService from "../services/TicketServices/UpdateTicketTagService";
 import Whatsapp from "../models/Whatsapp";
 import AppError from "../errors/AppError";
 import CreateMessageSystemService from "../services/MessageServices/CreateMessageSystemService";
@@ -96,6 +97,24 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
   }
 
   return res.status(200).json(ticket);
+};
+
+export const updateTicketTag = async (req: Request, res: Response): Promise<Response> => {
+  const { ticketId, tagId } = req.params; // Ambos os IDs vêm dos parâmetros da URL
+  const tenantId = req.user?.tenantId;
+
+  try {
+    const ticket = await UpdateTicketTagService({
+      ticketId: parseInt(ticketId),
+      tagId: parseInt(tagId), // Adicione a conversão para inteiro se necessário
+      tenantId
+    });
+
+    return res.status(200).json(ticket);
+  } catch (err) {
+    console.error("Error updating ticket tag:", err);
+    return res.status(400).json({ error: err.message });
+  }
 };
 
 export const show = async (req: Request, res: Response): Promise<Response> => {

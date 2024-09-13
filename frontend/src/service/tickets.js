@@ -35,6 +35,16 @@ export function AtualizarStatusTicket (ticketId, status, userId) {
   })
 }
 
+export function AtualizarStatusTicketTag(ticketId, tagId, userId) {
+  return request({
+    url: `/tickets/${ticketId}/tags/${tagId}`, // Corrigido para incluir /tags
+    method: 'put',
+    data: {
+      userId // Inclua apenas userId se for necessário
+    }
+  });
+}
+
 export function AtualizarTicket (ticketId, data) {
   return request({
     url: `/tickets/${ticketId}`,

@@ -16,6 +16,7 @@ type logType =
   | "chatBot"
   | "autoClose"
   | "retriesLimitQueue"
+  | "updateTag"
   | "retriesLimitUserDefine";
 
 interface Request {

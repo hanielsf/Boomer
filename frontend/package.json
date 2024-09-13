@@ -41,6 +41,7 @@
     "vue-easy-lightbox": "^0.14.0",
     "vue-facebook-login-component": "^4.0.2",
     "vue-infinite-loading": "^2.4.5",
+    "vue-kanban": "^1.8.0",
     "vue-linkify": "^1.0.1",
     "vue-loader": "^15.10.1",
     "vuedraggable": "^2.24.3",

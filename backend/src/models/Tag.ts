@@ -7,11 +7,14 @@ import {
   PrimaryKey,
   ForeignKey,
   BelongsTo,
+  BelongsToMany,
   AutoIncrement,
   Default
 } from "sequelize-typescript";
 import Tenant from "./Tenant";
 import User from "./User";
+import TicketTags from "./TicketTags";
+import Ticket from "./Ticket";
 
 @Table
 class Tags extends Model<Tags> {
@@ -46,6 +49,9 @@ class Tags extends Model<Tags> {
   @ForeignKey(() => Tenant)
   @Column
   tenantId: number;
+
+  @BelongsToMany(() => Ticket, () => TicketTags)
+  tickets: Ticket[];
 
   @BelongsTo(() => Tenant)
   tenant: Tenant;

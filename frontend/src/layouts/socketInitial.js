@@ -33,52 +33,68 @@ export default {
       })
 
       socket.on(`${usuario.tenantId}:ticketList`, async data => {
-        console.log('socket ON')
+        console.log('socket ON');
+    
+        // Verifique se o tipo de evento corresponde ao esperado
         if (data.type === 'chat:create') {
-          console.log('chat:create')
-          if (data.payload.ticket.userId !== userId) return
-          if (data.payload.fromMe) return
-          const message = new self.Notification('Contato: ' + data.payload.ticket.contact.name, {
-            body: 'Mensagem: ' + data.payload.body,
-            tag: 'simple-push-demo-notification',
-            image: data.payload.ticket.contact.profilePicUrl,
-            icon: data.payload.ticket.contact.profilePicUrl
-          })
-          console.log(message)
-          console.log('enviou msg')
-          // Atualiza notificações de mensagem
-          const params = {
-            searchParam: '',
-            pageNumber: 1,
-            status: ['open'],
-            showAll: false,
-            count: null,
-            queuesIds: [],
-            withUnreadMessages: true,
-            isNotAssignedUser: false,
-            includeNotQueueDefined: true
-            // date: new Date(),
-          }
-          console.log('Definiu parametros')
-          try {
-            console.log('try')
-            const { data } = await ConsultarTickets(params)
-            console.log('try 1')
-            this.countTickets = data.count // count total de tickets no status
-            console.log('try 2')
-            // this.ticketsList = data.tickets
-            this.$store.commit('UPDATE_NOTIFICATIONS', data)
-            console.log('try 3')
-            // this.$store.commit('SET_HAS_MORE', data.hasMore)
-            // console.log(this.notifications)
-          } catch (err) {
-            console.log('error try')
-            this.$notificarErro('Algum problema', err)
-            console.error(err)
-          }
+            console.log('chat:create');
+    
+            // Verifique se o ticket e o contato estão definidos no payload
+            if (data.payload?.ticket?.userId !== userId) return;
+            if (data.payload?.fromMe) return;
+    
+            // Verifique se os dados necessários estão presentes
+            const contactName = data.payload?.ticket?.contact?.name || 'Desconhecido';
+            const contactPicUrl = data.payload?.ticket?.contact?.profilePicUrl || '';
+            const messageBody = data.payload?.body || '';
+    
+            // Crie a notificação
+            const message = new self.Notification('Contato: ' + contactName, {
+                body: 'Mensagem: ' + messageBody,
+                tag: 'simple-push-demo-notification',
+                image: contactPicUrl,
+                icon: contactPicUrl
+            });
+            console.log(message);
+            console.log('enviou msg');
+    
+            // Atualize notificações de mensagem
+            const params = {
+                searchParam: '',
+                pageNumber: 1,
+                status: ['open'],
+                showAll: false,
+                count: null,
+                queuesIds: [],
+                withUnreadMessages: true,
+                isNotAssignedUser: false,
+                includeNotQueueDefined: true
+                // date: new Date(),
+            };
+            console.log('Definiu parametros');
+    
+            try {
+                console.log('try');
+                const response = await ConsultarTickets(params);
+                console.log('try 1');
+    
+                // Verifique se a resposta contém os dados esperados
+                if (response && response.data) {
+                    this.countTickets = response.data.count; // count total de tickets no status
+                    console.log('try 2');
+                    this.$store.commit('UPDATE_NOTIFICATIONS', response.data);
+                    console.log('try 3');
+                } else {
+                    console.error('Resposta inválida da API:', response);
+                }
+            } catch (err) {
+                console.log('error try');
+                this.$notificarErro('Algum problema', err);
+                console.error(err);
+            }
         }
       })
-
+    
       socket.on(`${usuario.tenantId}:whatsapp`, data => {
         if (data.action === 'delete') {
           this.$store.commit('DELETE_WHATSAPPS', data.whatsappId)

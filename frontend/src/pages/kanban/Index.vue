@@ -1,106 +1,160 @@
 <template>
-  <q-page class="kanban-page">
-    <div class="row q-pa-md">
-      <div class="col-12">
-        <h1 class="text-h4 q-mb-md">Dashboard Kanban</h1>
-        <q-btn color="primary" label="Atualizar" @click="fetchData" class="q-mb-md" />
+  <div v-if="userProfile === 'admin'">
+    <q-page class="kanban-page">
+      <div class="row q-pa-md">
+        <div class="col-12">
+          <h1 class="text-h4 q-mb-md">Dashboard Kanban</h1>
+        </div>
       </div>
-    </div>
-    <KanbanBoard :tickets="tickets" :tags="etiquetas" @ticket-move="handleTicketMove" />
-  </q-page>
+      <div ref="kanbanContainer"></div>
+    </q-page>
+  </div>
+  <div v-else>
+    <q-page class="flex flex-center">
+      <p>Você não tem permissão para acessar esta página.</p>
+    </q-page>
+  </div>
 </template>
 
 <script>
-import { defineComponent, h } from 'vue';
-import KanbanBoardReact from './KanbanBoard.jsx';
-import { ConsultarTickets } from 'src/service/tickets';
+import { defineComponent, onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import KanbanBoard from './KanbanBoard.jsx';
+import { ConsultarTickets, AtualizarStatusTicketTag } from 'src/service/tickets';
 import { ListarEtiquetas } from 'src/service/etiquetas';
-import { EditarEtiquetasContato } from 'src/service/contatos';
+import { socketIO } from 'src/utils/socket';
 
 export default defineComponent({
   name: 'KanbanPage',
-  components: {
-    KanbanBoard: {
-      props: ['tickets', 'tags'],
-      emits: ['ticket-move'],
-      setup(props, { emit }) {
-        return () => h(KanbanBoardReact, {
-          ...props,
-          onTicketMove: (ticketId, newTagId) => emit('ticket-move', ticketId, newTagId)
-        });
-      }
-    }
-  },
-  data() {
-    return {
-      tickets: [],
-      etiquetas: [],
-      loading: false
-    };
-  },
-  methods: {
-    async fetchData() {
-      this.loading = true;
+  setup() {
+    const userProfile = ref('user');
+    const tickets = ref([]);
+    const etiquetas = ref([]);
+    const kanbanContainer = ref(null);
+    let root = null;
+    let socket = null;
+
+    const fetchData = async () => {
       try {
-        await this.fetchTickets();
-        await this.fetchEtiquetas();
+        await Promise.all([fetchTickets(), fetchEtiquetas()]);
+        renderKanbanBoard();
       } catch (error) {
         console.error('Erro ao buscar dados:', error);
-        this.$q.notify({
-          color: 'negative',
-          message: 'Erro ao carregar dados. Por favor, tente novamente.',
-          icon: 'report_problem'
-        });
-      } finally {
-        this.loading = false;
       }
-    },
-    async fetchTickets() {
+    };
+
+    const fetchTickets = async () => {
       const params = {
         pageNumber: 1,
         status: ['open', 'pending'],
         showAll: true,
-        includeNotQueueDefined: true
+        includeNotQueueDefined: true,
+        includeTags: true // Adicionamos este parâmetro para incluir informações das tags
       };
-      const { data } = await ConsultarTickets(params);
-      this.tickets = data.tickets;
-    },
-    async fetchEtiquetas() {
-      const { data } = await ListarEtiquetas(true);
-      this.etiquetas = data;
-    },
-    async handleTicketMove(ticketId, newTagId) {
       try {
-        const ticket = this.tickets.find(t => t.id.toString() === ticketId);
-        if (!ticket) return;
-
-        const updatedTags = [...ticket.tags.map(t => t.id), newTagId];
-        await EditarEtiquetasContato(ticket.contact.id, updatedTags);
-
-        // Atualizar o ticket localmente
-        const updatedTicket = {
-          ...ticket,
-          tags: this.etiquetas.filter(tag => updatedTags.includes(tag.id))
-        };
-        this.tickets = this.tickets.map(t => t.id === updatedTicket.id ? updatedTicket : t);
-
-        this.$q.notify({
-          color: 'positive',
-          message: 'Ticket atualizado com sucesso!',
-          icon: 'check_circle'
-        });
+        const { data } = await ConsultarTickets(params);
+        tickets.value = data.tickets;
       } catch (error) {
-        console.error('Erro ao mover ticket:', error);
-        this.$q.notify({
-          color: 'negative',
-          message: 'Erro ao atualizar ticket. Por favor, tente novamente.',
-          icon: 'report_problem'
-        });
+        console.error('Erro ao buscar tickets:', error);
       }
-    }
-  },
-  mounted() {
-    this.fetchData();
+    };
+
+    const fetchEtiquetas = async () => {
+      try {
+        const { data } = await ListarEtiquetas(true);
+        etiquetas.value = data;
+      } catch (error) {
+        console.error('Erro ao buscar etiquetas:', error);
+      }
+    };
+
+    const renderKanbanBoard = () => {
+      const container = kanbanContainer.value;
+      if (!root) {
+        root = ReactDOM.createRoot(container);
+      }
+      root.render(
+        React.createElement(KanbanBoard, {
+          tickets: tickets.value,
+          tags: etiquetas.value,
+          onTicketMove: handleTicketMove,
+          onTicketClick: handleTicketClick
+        })
+      );
+    };
+
+    const handleTicketMove = async (ticketId, newTagId) => {
+      try {
+        const userId = localStorage.getItem('userId');
+        await AtualizarStatusTicketTag(ticketId, newTagId, userId);
+        // Atualizamos o estado local para refletir a mudança imediatamente
+        const updatedTickets = tickets.value.map(ticket => {
+          if (ticket.id === ticketId) {
+            return {
+              ...ticket,
+              tags: [etiquetas.value.find(tag => tag.id === newTagId)]
+            };
+          }
+          return ticket;
+        });
+        tickets.value = updatedTickets;
+        renderKanbanBoard();
+      } catch (error) {
+        console.error('Erro ao mover o ticket:', error);
+      }
+    };
+
+    const handleTicketClick = (ticket) => {
+      if (this.$q.screen.lt.md && ticket.status !== 'pending') {
+        this.$root.$emit('infor-cabecalo-chat:acao-menu');
+      }
+      this.$store.commit('SET_HAS_MORE', true);
+      this.$store.dispatch('AbrirChatMensagens', ticket);
+    };
+
+    const setupWebSocket = () => {
+      socket = socketIO();
+      const tenantId = localStorage.getItem('tenantId');
+
+      socket.on('connect', () => {
+        socket.emit(`${tenantId}:joinKanban`);
+      });
+
+      socket.on(`${tenantId}:ticket`, (data) => {
+        if (data.action === 'update' || data.action === 'create' || data.action === 'delete') {
+          fetchData(); // Atualizamos os dados quando houver mudanças
+        }
+      });
+    };
+
+    onMounted(() => {
+      userProfile.value = localStorage.getItem('profile');
+      if (userProfile.value === 'admin') {
+        fetchData();
+        setupWebSocket();
+      }
+    });
+
+    onBeforeUnmount(() => {
+      if (root) {
+        root.unmount();
+      }
+      if (socket) {
+        socket.disconnect();
+      }
+    });
+
+    watch([tickets, etiquetas], () => {
+      renderKanbanBoard();
+    });
+
+    return {
+      userProfile,
+      kanbanContainer,
+      handleTicketMove,
+      handleTicketClick
+    };
   }
 });
 </script>
