@@ -100,10 +100,10 @@ const ListTicketsService = async ({
   }
 
   const query = `
-  select
+  SELECT
     count(*) OVER ( ) as count,
     c."profilePicUrl",
-    c."name",
+    c."name" as contact_name,
     u."name" as username,
     q.queue,
     jsonb_build_object('id', w.id, 'name', w."name") whatsapp,
@@ -114,26 +114,26 @@ const ListTicketsService = async ({
       INNER JOIN ticket_tags tt ON tt."tag_id" = tag.id
       WHERE tt."ticket_id" = t.id
     ) as tags
-  from "Tickets" t
-  inner join "Whatsapps" w on (w.id = t."whatsappId")
-  left join "Contacts" c on (t."contactId" = c.id)
-  left join "Users" u on (u.id = t."userId")
-  left join "Queues" q on (t."queueId" = q.id)
-  where t."tenantId" = :tenantId
-    and c."tenantId" = :tenantId
-    and t.status in ( :status )
-    and (( :isShowAll = 'N' and  (
-      (:isExistsQueueTenant = 'S' and t."queueId" in ( :queuesIdsUser ))
-      or t."userId" = :userId or exists (select 1 from "ContactWallets" cw where cw."walletId" = :userId and cw."contactId" = t."contactId") )
+  FROM "Tickets" t
+  INNER JOIN "Whatsapps" w ON (w.id = t."whatsappId")
+  LEFT JOIN "Contacts" c ON (t."contactId" = c.id)
+  LEFT JOIN "Users" u ON (u.id = t."userId")
+  LEFT JOIN "Queues" q ON (t."queueId" = q.id)
+  WHERE t."tenantId" = :tenantId
+    AND c."tenantId" = :tenantId
+    AND t.status IN ( :status )
+    AND (( :isShowAll = 'N' AND  (
+      (:isExistsQueueTenant = 'S' AND t."queueId" IN ( :queuesIdsUser ))
+      OR t."userId" = :userId OR EXISTS (SELECT 1 FROM "ContactWallets" cw WHERE cw."walletId" = :userId AND cw."contactId" = t."contactId") )
     ) OR (:isShowAll = 'S') OR (t."isGroup" = true) OR (:isExistsQueueTenant = 'N') )
-    and (( :isUnread = 'S'  and t."unreadMessages" > 0) OR (:isUnread = 'N'))
-    and ((:isNotAssigned = 'S' and t."userId" is null) OR (:isNotAssigned = 'N'))
-    and ((:isSearchParam = 'S' and ( 
-      (t.id::varchar like :searchParam) or 
-      (exists (select 1 from "Contacts" c where c.id = t."contactId" and (upper(c."name") like upper(:searchParam) or c."number" like :searchParam)))
+    AND (( :isUnread = 'S'  AND t."unreadMessages" > 0) OR (:isUnread = 'N'))
+    AND ((:isNotAssigned = 'S' AND t."userId" IS NULL) OR (:isNotAssigned = 'N'))
+    AND ((:isSearchParam = 'S' AND ( 
+      (t.id::varchar LIKE :searchParam) OR 
+      (EXISTS (SELECT 1 FROM "Contacts" c WHERE c.id = t."contactId" AND (UPPER(c."name") LIKE UPPER(:searchParam) OR c."number" LIKE :searchParam)))
     )) OR (:isSearchParam = 'N'))
-  order by t."updatedAt" desc
-  limit :limit offset :offset 
+  ORDER BY t."updatedAt" DESC
+  LIMIT :limit OFFSET :offset 
   `;
 
   const limit = 30;

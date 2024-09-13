@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import './KanbanBoard.css';
 import { Inbox, Clock, Coffee, CheckCircle, Search, Filter, X, User, Calendar } from 'lucide-react';
+import './KanbanBoard.css';
 
 const KanbanBoard = ({ tickets, tags, onTicketMove, onTicketClick }) => {
   const [columns, setColumns] = useState({});
@@ -58,7 +58,7 @@ const KanbanBoard = ({ tickets, tags, onTicketMove, onTicketClick }) => {
   const filteredTickets = useMemo(() => {
     return tickets.filter(ticket => {
       const matchesSearch = ticket.id.toString().includes(searchTerm) ||
-                            ticket.contact?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            ticket.contact_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             ticket.lastMessage.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesPriority = !filters.priority || ticket.priority === filters.priority;
@@ -155,24 +155,30 @@ const KanbanBoard = ({ tickets, tags, onTicketMove, onTicketClick }) => {
           <span className="ticket-priority" style={{ backgroundColor: ticketColor }}>{ticket.priority}</span>
         </div>
         <div className="ticket-content">
-          <div className="ticket-title">{ticket.contact?.name || 'Nome não disponível'}</div>
-          <div className="ticket-message">{ticket.lastMessage}</div>
+          <div className="ticket-title">{truncateText(ticket.contact_name || 'Nome não disponível', 30)}</div>
+          <div className="ticket-message">{truncateText(ticket.lastMessage, 50)}</div>
         </div>
         <div className="ticket-footer">
           <div className="ticket-assignee">
             <User size={14} />
-            <span>{ticket.assignee}</span>
+            <span>{truncateText(ticket.assignee, 20)}</span>
           </div>
           <div className="ticket-tags">
             {ticket.tags && ticket.tags.map(tag => (
               <span key={tag.id} className="ticket-tag" style={{ backgroundColor: tag.color }}>
-                {tag.tag}
+                {truncateText(tag.tag, 10)}
               </span>
             ))}
           </div>
         </div>
       </div>
     );
+  };
+
+  const truncateText = (text, maxLength) => {
+    if (!text) return ''; // Verifica se o texto está definido
+    if (text.length <= maxLength) return text;
+    return text.substr(0, maxLength) + '...';
   };
 
   return (
@@ -249,17 +255,17 @@ const KanbanBoard = ({ tickets, tags, onTicketMove, onTicketClick }) => {
                   </h3>
                   <div className="column-content">
                     {column.ticketIds
-                      .filter(id => filteredTickets.some(ticket => ticket.id.toString() === id.toString()))
-                      .map((ticketId, index) => {
-                        const ticket = tickets.find(t => t.id.toString() === ticketId.toString());
-                        if (!ticket) return null;
-                        return (
-                          <Draggable key={ticketId} draggableId={ticketId.toString()} index={index}>
-                            {(provided) => renderTicket(ticket, provided)}
-                          </Draggable>
-                        );
-                      })}
-                    {provided.placeholder}
+                        .filter(id => filteredTickets.some(ticket => ticket.id.toString() === id.toString()))
+                        .map((ticketId, index) => {
+                          const ticket = tickets.find(t => t.id.toString() === ticketId.toString());
+                          if (!ticket) return null;
+                          return (
+                            <Draggable key={ticketId} draggableId={ticketId.toString()} index={index}>
+                              {(provided) => renderTicket(ticket, provided)}
+                            </Draggable>
+                          );
+                        })}
+                      {provided.placeholder}
                   </div>
                 </div>
               )}
