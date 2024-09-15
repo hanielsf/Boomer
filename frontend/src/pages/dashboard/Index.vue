@@ -87,11 +87,11 @@ export default {
       },
       dashData: {
         qtd_total_atendimentos: 0,
-        tma: 0,
+        tma: { hours: 0, minutes: 0, seconds: 0 },
+        tme: { hours: 0, minutes: 0, seconds: 0 },
         qtd_resolvidos: 0,
         new_contacts: 0,
         satisfacao: 0,
-        tme: 0,
         qtd_pendentes: 0,
         qtd_atendentes: 1, // Para evitar divisão por zero
         channels: [],
@@ -118,7 +118,7 @@ export default {
         {
           label: 'Tempo Médio de Atendimento',
           value: this.formatDuration(this.dashData.tma),
-          progress: this.dashData.tma / (24 * 60 * 60 * 1000) // Progresso baseado em 24 horas
+          progress: this.calculateProgress(this.dashData.tma)
         },
         {
           label: 'Taxa de Resolução',
@@ -138,7 +138,7 @@ export default {
         {
           label: 'Tempo Médio de Espera',
           value: this.formatDuration(this.dashData.tme),
-          progress: this.dashData.tme / (60 * 60 * 1000) // Progresso baseado em 1 hora
+          progress: this.calculateProgress(this.dashData.tme)
         },
         {
           label: 'Atendimentos Pendentes',
@@ -158,7 +158,6 @@ export default {
         labels: this.dashData.channels.map(c => c.label),
         theme: { mode: this.currentTheme },
         responsive: [{ breakpoint: 480, options: { chart: { width: 200 }, legend: { position: 'bottom' } } }],
-        // Adicione estas opções para melhorar a visibilidade no tema claro
         colors: ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],
         plotOptions: {
           pie: {
@@ -185,7 +184,6 @@ export default {
         stroke: { curve: 'smooth' },
         xaxis: { type: 'datetime', categories: this.dashData.evolution.map(e => e.label) },
         theme: { mode: this.currentTheme },
-        // Adicione estas opções para melhorar a visibilidade no tema claro
         colors: ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],
         grid: {
           borderColor: this.currentTheme === 'dark' ? '#4b5563' : '#e5e7eb'
@@ -213,11 +211,16 @@ export default {
     }
   },
   methods: {
-    formatDuration(milliseconds) {
-      if (!milliseconds) return '-'
-      const hours = Math.floor(milliseconds / 3600000)
-      const minutes = Math.floor((milliseconds % 3600000) / 60000)
-      return `${hours}h ${minutes}m`
+    formatDuration(timeObject) {
+      if (!timeObject || typeof timeObject !== 'object') return 'N/A'
+      const { hours = 0, minutes = 0, seconds = 0 } = timeObject
+      return `${hours}h ${minutes}m ${seconds}s`
+    },
+    calculateProgress(timeObject) {
+      if (!timeObject || typeof timeObject !== 'object') return 0
+      const { hours = 0, minutes = 0, seconds = 0 } = timeObject
+      const totalSeconds = hours * 3600 + minutes * 60 + seconds
+      return Math.min(totalSeconds / (24 * 3600), 1) // Assume um máximo de 24 horas
     },
     async fetchDashboardData() {
       this.isLoading = true
@@ -228,16 +231,19 @@ export default {
           GetDashTicketsEvolutionByPeriod({ startDate: date.formatDate(this.dateRange.from, 'YYYY-MM-DD'), endDate: date.formatDate(this.dateRange.to, 'YYYY-MM-DD') }),
           GetDashTicketsPerUsersDetail({ startDate: date.formatDate(this.dateRange.from, 'YYYY-MM-DD'), endDate: date.formatDate(this.dateRange.to, 'YYYY-MM-DD') })
         ])
+        
+        const times = timesResponse.data[0]
         this.dashData = {
-          ...this.dashData, // Mantém os valores padrão
-          ...timesResponse.data[0],
+          ...this.dashData,
+          ...times,
           channels: channelsResponse.data,
           evolution: evolutionResponse.data,
           teamPerformance: usersResponse.data
         }
+
+        console.log('TMA:', this.dashData.tma, 'TME:', this.dashData.tme) // Para depuração
       } catch (error) {
         console.error('Erro ao carregar dados do dashboard:', error)
-        // Use this.$q.notify se disponível, caso contrário use um alert padrão
         if (this.$q && this.$q.notify) {
           this.$q.notify({ type: 'negative', message: 'Erro ao carregar dados do dashboard' })
         } else {
@@ -261,7 +267,6 @@ export default {
 </script>
 
 <style scoped>
-/* Adicione estes estilos para melhorar a aparência geral */
 .dashboard {
   max-width: 1400px;
   margin: 0 auto;
@@ -273,12 +278,10 @@ export default {
 .date-picker {
   width: 250px;
 }
-/* Estilos para o tema claro */
 :root {
   --card-bg: #ffffff;
   --text-color: #333333;
 }
-/* Estilos para o tema escuro */
 .body--dark {
   --card-bg: #1e1e1e;
   --text-color: #ffffff;
