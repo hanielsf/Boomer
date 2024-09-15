@@ -61,7 +61,7 @@
       <q-item-section id="ListItemsTicket">
         <q-item-label class="text-bold"
           lines="1">
-          {{ !ticket.name ? ticket.contact.name : ticket.name }}
+          {{ !ticket.contact_name ? ticket.contact.name : ticket.contact_name }}
           <q-icon size="20px"
             :name="`img:${ticket.channel}-logo.png`" />
           <span class="absolute-top-right q-pr-xs">

@@ -17,7 +17,7 @@
     "@quasar/cli": "^2.4.0",
     "@quasar/extras": "^1.16.3",
     "@vue/runtime-dom": "^3.5.4",
-    "apexcharts": "^3.40.0",
+    "apexcharts": "^3.53.0",
     "axios": "^1.4.0",
     "core-js": "^3.30.2",
     "date-fns": "^2.30.0",
