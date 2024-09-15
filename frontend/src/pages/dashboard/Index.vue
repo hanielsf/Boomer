@@ -1,46 +1,48 @@
 <template>
   <q-page class="dashboard q-pa-md">
     <div class="row items-center justify-between q-mb-md">
-      <h1 class="text-h4">Visão Geral de Atendimentos</h1>
-      <div class="date-picker">
-        <q-btn-dropdown color="primary" :label="formatDateRange">
-          <q-date v-model="dateRange" range minimal />
-        </q-btn-dropdown>
-      </div>
+      <h1 class="text-h4 text-weight-bold">Visão Geral de Atendimentos</h1>
+      <q-btn-dropdown color="primary" :label="formatDateRange" class="date-picker">
+        <q-date v-model="dateRange" range minimal />
+      </q-btn-dropdown>
     </div>
 
-    <div v-if="isLoading" class="text-center q-pa-md">
+    <div v-if="isLoading" class="fullscreen flex flex-center">
       <q-spinner color="primary" size="3em" />
-      <p>Carregando dados...</p>
     </div>
 
     <template v-else>
-      <div class="row q-col-gutter-md">
+      <div class="row q-col-gutter-md q-mb-md">
         <div v-for="metric in metrics" :key="metric.label" class="col-xs-12 col-sm-6 col-md-3">
           <q-card class="metric-card">
             <q-card-section>
-              <div class="text-subtitle2">{{ metric.label }}</div>
-              <div class="text-h5">{{ metric.value }}</div>
-              <q-linear-progress :value="metric.progress" class="q-mt-sm" />
+              <div class="text-subtitle1 text-grey">{{ metric.label }}</div>
+              <div class="text-h4 text-weight-bold q-mt-sm">{{ metric.value }}</div>
+              <q-linear-progress
+                :value="metric.progress"
+                class="q-mt-sm"
+                size="10px"
+                :color="getProgressColor(metric.progress)"
+              />
             </q-card-section>
           </q-card>
         </div>
       </div>
 
-      <div class="row q-col-gutter-md q-mt-md">
+      <div class="row q-col-gutter-md">
         <div class="col-xs-12 col-md-6">
-          <q-card>
+          <q-card class="chart-card">
             <q-card-section>
-              <div class="text-h6">Distribuição por Canal</div>
+              <div class="text-h6 text-weight-bold">Distribuição por Canal</div>
               <apexchart type="donut" height="300" :options="channelDistributionOptions" :series="channelDistributionSeries" />
             </q-card-section>
           </q-card>
         </div>
         <div class="col-xs-12 col-md-6">
-          <q-card>
+          <q-card class="chart-card">
             <q-card-section>
-              <div class="text-h6">Evolução de Atendimentos</div>
-              <apexchart type="line" height="300" :options="attendanceEvolutionOptions" :series="attendanceEvolutionSeries" />
+              <div class="text-h6 text-weight-bold">Evolução de Atendimentos</div>
+              <apexchart type="area" height="300" :options="attendanceEvolutionOptions" :series="attendanceEvolutionSeries" />
             </q-card-section>
           </q-card>
         </div>
@@ -48,7 +50,7 @@
 
       <q-card class="q-mt-md">
         <q-card-section>
-          <div class="text-h6">Desempenho da Equipe</div>
+          <div class="text-h6 text-weight-bold q-mb-md">Desempenho da Equipe</div>
           <q-table
             :data="teamPerformance"
             :columns="teamPerformanceColumns"
@@ -56,7 +58,19 @@
             :pagination.sync="pagination"
             flat
             bordered
-          />
+            class="performance-table"
+          >
+            <template v-slot:body-cell-efficiency="props">
+              <q-td :props="props">
+                <q-linear-progress
+                  :value="props.value / 100"
+                  size="xs"
+                  :color="getProgressColor(props.value / 100)"
+                />
+                <span class="q-ml-sm">{{ props.value }}%</span>
+              </q-td>
+            </template>
+          </q-table>
         </q-card-section>
       </q-card>
     </template>
@@ -179,12 +193,21 @@ export default {
     },
     attendanceEvolutionOptions() {
       return {
-        chart: { type: 'line', zoom: { enabled: false } },
+        chart: { type: 'area', zoom: { enabled: false } },
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth' },
         xaxis: { type: 'datetime', categories: this.dashData.evolution.map(e => e.label) },
         theme: { mode: this.currentTheme },
-        colors: ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],
+        colors: ['#008FFB'],
+        fill: {
+          type: 'gradient',
+          gradient: {
+            shadeIntensity: 1,
+            opacityFrom: 0.7,
+            opacityTo: 0.9,
+            stops: [0, 90, 100]
+          }
+        },
         grid: {
           borderColor: this.currentTheme === 'dark' ? '#4b5563' : '#e5e7eb'
         }
@@ -203,7 +226,7 @@ export default {
         { name: 'qtd_pendentes', label: 'Pendentes', field: 'qtd_pendentes', sortable: true, align: 'center' },
         { name: 'tma', label: 'TMA', field: 'tma', format: this.formatDuration, sortable: true, align: 'center' },
         { name: 'tme', label: 'TME', field: 'tme', format: this.formatDuration, sortable: true, align: 'center' },
-        { name: 'efficiency', label: 'Eficiência', field: row => ((row.qtd_resolvidos / 8) * 100).toFixed(1) + '%', sortable: true, align: 'center' }
+        { name: 'efficiency', label: 'Eficiência', field: row => ((row.qtd_resolvidos / 8) * 100).toFixed(1), sortable: true, align: 'center' }
       ]
     },
     teamPerformance() {
@@ -221,6 +244,11 @@ export default {
       const { hours = 0, minutes = 0, seconds = 0 } = timeObject
       const totalSeconds = hours * 3600 + minutes * 60 + seconds
       return Math.min(totalSeconds / (24 * 3600), 1) // Assume um máximo de 24 horas
+    },
+    getProgressColor(value) {
+      if (value < 0.3) return 'negative'
+      if (value < 0.7) return 'warning'
+      return 'positive'
     },
     async fetchDashboardData() {
       this.isLoading = true
@@ -266,26 +294,67 @@ export default {
 }
 </script>
 
-<style scoped>
+<style lang="scss">
 .dashboard {
   max-width: 1400px;
   margin: 0 auto;
 }
+
 .metric-card {
   height: 100%;
   transition: all 0.3s ease;
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
 }
+
+.chart-card {
+  transition: all 0.3s ease;
+  &:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+}
+
 .date-picker {
-  width: 250px;
+  .q-btn-dropdown__arrow {
+    margin-left: 8px;
+  }
 }
+
+.performance-table {
+  .q-table__top,
+  .q-table__bottom,
+  thead tr:first-child th {
+    background-color: #f5f5f5;
+  }
+  thead tr th {
+    position: sticky;
+    z-index: 1;
+  }
+  thead tr:first-child th {
+    top: 0;
+  }
+}
+
 :root {
   --card-bg: #ffffff;
   --text-color: #333333;
 }
+
 .body--dark {
   --card-bg: #1e1e1e;
   --text-color: #ffffff;
+
+  .performance-table {
+    .q-table__top,
+    .q-table__bottom,
+    thead tr:first-child th {
+      background-color: #2a2a2a;
+    }
+  }
 }
+
 .q-card {
   background-color: var(--card-bg);
   color: var(--text-color);

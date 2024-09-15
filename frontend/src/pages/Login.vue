@@ -1,106 +1,81 @@
 <template>
-  <q-layout class="vertical-center">
+  <q-layout class="login-layout">
     <q-page-container>
-      <q-page class="flex justify-center items-center">
-        <q-ajax-bar
-          position="top"
-          color="primary"
-          size="5px"
-        />
-        <q-card
-          bordered
-          class="card q-pa-md shadow-10"
-          style="border-top: 5px solid #3E72AF; background-color: rgba(255,255,255,0.75); border-radius: 20px"
-        >
-          <q-card-section class="text-primary text-center">
+      <q-page class="flex flex-center">
+        <q-ajax-bar position="top" color="primary" size="3px" />
+        
+        <q-card class="login-card q-pa-lg shadow-10">
+          <q-card-section class="text-center">
             <q-img
               src="/logo_izing.png"
-              spinner-color="white"
-              style="height: 120px; max-width: 300px"
-              class="q-mb-lg q-px-md"
+              spinner-color="primary"
+              style="height: 100px; max-width: 250px"
+              class="q-mb-md"
             />
-            <q-separator spaced />
-          </q-card-section>
-          <q-card-section class="text-primary">
-            <div class="text-h6">Bem vindo!</div>
-            <div class="text-caption text-grey">Faça login...</div>
           </q-card-section>
 
           <q-card-section>
-            <q-input
-              class="q-mb-md"
-              clearable
-              rounded
-              v-model="form.email"
-              placeholder="meu@email.com"
-              @blur="$v.form.email.$touch"
-              :error="$v.form.email.$error"
-              error-message="Deve ser um e-mail válido."
-              outlined
-              @keypress.enter="fazerLogin"
-            >
-              <template v-slot:prepend>
-                <q-icon
-                  name="mdi-email-outline"
-                  class="cursor-pointer"
-                  color='primary'
-                />
-              </template>
-            </q-input>
-
-            <q-input
-              outlined
-              rounded
-              v-model="form.password"
-              :type="isPwd ? 'password' : 'text'"
-              @keypress.enter="fazerLogin"
-            >
-              <template v-slot:prepend>
-                <q-icon
-                  name="mdi-shield-key-outline"
-                  class="cursor-pointer"
-                  color='primary'
-                />
-              </template>
-              <template v-slot:append>
-                <q-icon
-                  :name="isPwd ? 'visibility_off' : 'visibility'"
-                  class="cursor-pointer"
-                  @click="isPwd = !isPwd"
-                />
-              </template>
-            </q-input>
+            <div class="text-h5 text-weight-bold text-primary q-mb-md">Bem-vindo!</div>
+            <div class="text-subtitle2 text-grey">Faça login para continuar</div>
           </q-card-section>
-          <q-card-actions>
-            <q-space />
-            <q-btn
-              class="q-mr-sm q-my-lg"
-              style="width: 150px"
-              color="primary"
-              rounded
-              :loading="loading"
-              @click="fazerLogin"
-            >
-              Login
-              <span slot="loading">
-                <q-spinner-puff class="on-left" />Logando...
-              </span>
-            </q-btn>
-          </q-card-actions>
-          <!-- <q-btn
-            flat
-            color="info"
-            no-caps
-            dense
-            class="q-px-sm"
-            label="Esqueci a senha"
-            @click="modalEsqueciSenha=true"
-          /> -->
 
-          <q-inner-loading :showing="loading" />
+          <q-card-section>
+            <q-form @submit="fazerLogin" class="q-gutter-md">
+              <q-input
+                v-model="form.email"
+                outlined
+                rounded
+                label="E-mail"
+                type="email"
+                :error="$v.form.email.$error"
+                error-message="Insira um e-mail válido"
+                @blur="$v.form.email.$touch"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="mdi-email-outline" color="primary" />
+                </template>
+              </q-input>
+
+              <q-input
+                v-model="form.password"
+                outlined
+                rounded
+                :type="isPwd ? 'password' : 'text'"
+                label="Senha"
+                :error="$v.form.password.$error"
+                error-message="A senha é obrigatória"
+                @blur="$v.form.password.$touch"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="mdi-shield-key-outline" color="primary" />
+                </template>
+                <template v-slot:append>
+                  <q-icon
+                    :name="isPwd ? 'visibility_off' : 'visibility'"
+                    class="cursor-pointer"
+                    @click="isPwd = !isPwd"
+                  />
+                </template>
+              </q-input>
+
+              <div>
+                <q-btn
+                  label="Login"
+                  type="submit"
+                  color="primary"
+                  rounded
+                  class="full-width"
+                  :loading="loading"
+                >
+                  <template v-slot:loading>
+                    <q-spinner-dots />
+                  </template>
+                </q-btn>
+              </div>
+            </q-form>
+          </q-card-section>
         </q-card>
       </q-page>
-
     </q-page-container>
   </q-layout>
 </template>
@@ -112,8 +87,6 @@ export default {
   name: 'Login',
   data () {
     return {
-      modalEsqueciSenha: false,
-      emailRedefinicao: null,
       form: {
         email: null,
         password: null
@@ -127,28 +100,32 @@ export default {
     form: {
       email: { required, email },
       password: { required }
-    },
-    emailRedefinicao: { required, email }
+    }
   },
   methods: {
     fazerLogin () {
       this.$v.form.$touch()
       if (this.$v.form.$error) {
-        this.$q.notify('Informe usuário e senha corretamente.')
+        this.$q.notify({
+          color: 'negative',
+          message: 'Por favor, preencha todos os campos corretamente.',
+          icon: 'warning'
+        })
         return
       }
       this.loading = true
       this.$store.dispatch('UserLogin', this.form)
         .then(data => {
-          // if (Object.keys(this.contasCliente).length == 1) {
-          //   // logar direto
-          // }
           this.loading = false
-          // .params = { modalEscolhaUnidadeNegocio: true }
         })
         .catch(err => {
           console.error('exStore', err)
           this.loading = false
+          this.$q.notify({
+            color: 'negative',
+            message: 'Falha no login. Verifique suas credenciais.',
+            icon: 'error'
+          })
         })
     },
     clear () {
@@ -158,70 +135,43 @@ export default {
     }
   },
   mounted () {
+    // Qualquer lógica de montagem necessária
   }
 }
 </script>
-<style scoped>
-#login-app {
-  background: none;
+
+<style lang="scss" scoped>
+.login-layout {
+  background: linear-gradient(135deg, #FF8C00 0%, #FFA500 100%);
+  min-height: 100vh;
 }
 
-.index {
+.login-card {
   width: 100%;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  text-align: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-  overflow: hidden;
+  max-width: 400px;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
+  }
 }
 
-.index h1 {
-  height: 150px;
+.q-input {
+  .q-field__control {
+    height: 56px;
+  }
 }
 
-.index h1 img {
-  height: 100%;
+.q-btn {
+  height: 56px;
 }
 
-.index h2 {
-  color: #666;
-  margin-bottom: 200px;
-}
-
-.index h2 p {
-  margin: 0 0 50px;
-}
-
-.index .ivu-row-flex {
-  height: 100%;
-}
-
-#indexLizi {
-  position: absolute;
-  width: 100%;
-  top: 0;
-  bottom: 0;
-  overflow: hidden;
-}
-
-.bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.card {
-  width: 100%;
-  max-width: 430px;
-}
-
-.q-img__image {
-  background-repeat: no-repeat;
-  background-size: contain;
+.q-card__section + .q-card__section {
+  padding-top: 0;
 }
 </style>
