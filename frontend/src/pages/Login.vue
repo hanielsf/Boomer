@@ -3,7 +3,7 @@
     <q-page-container>
       <q-page class="flex flex-center">
         <q-ajax-bar position="top" color="primary" size="3px" />
-        
+
         <q-card class="login-card q-pa-lg shadow-10">
           <q-card-section class="text-center">
             <q-img

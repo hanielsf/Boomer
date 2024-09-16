@@ -57,7 +57,7 @@
             color="grey-8" />
         </q-avatar>
       </q-item-section>
-      
+
       <q-item-section id="ListItemsTicket">
         <q-item-label class="text-bold"
           lines="1">
@@ -118,7 +118,7 @@
             class="q-mr-md text-bold" />
         </q-item-label>
       </q-item-section>
-      
+
       <q-item-section side>
         <q-btn flat
           @click="espiarAtendimento(ticket)"

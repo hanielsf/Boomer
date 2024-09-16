@@ -9,11 +9,11 @@
 </template>
 
 <script>
-import draggable from 'vuedraggable';
+import draggable from 'vuedraggable'
 
 export default {
   components: { draggable },
-  data() {
+  data () {
     return {
       statuses: ['Aberto', 'Orçamento', 'Venda Finalizada', 'Em Produção'],
       tasks: {
@@ -22,9 +22,9 @@ export default {
         'Venda Finalizada': [],
         'Em Produção': []
       }
-    };
+    }
   }
-};
+}
 </script>
 
 <style scoped>

@@ -49,34 +49,34 @@
 </template>
 
 <script>
-import { defineComponent, onMounted, onBeforeUnmount, ref } from 'vue';
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import KanbanBoard from './KanbanBoard.jsx';
-import { ConsultarTickets, AtualizarStatusTicketTag } from 'src/service/tickets';
-import { ListarEtiquetas } from 'src/service/etiquetas';
-import { socketIO } from 'src/utils/socket';
+import { defineComponent, onMounted, onBeforeUnmount, ref } from 'vue'
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import KanbanBoard from './KanbanBoard.jsx'
+import { ConsultarTickets, AtualizarStatusTicketTag } from 'src/service/tickets'
+import { ListarEtiquetas } from 'src/service/etiquetas'
+import { socketIO } from 'src/utils/socket'
 
 export default defineComponent({
   name: 'KanbanPage',
-  setup() {
-    const userProfile = ref('user');
-    const tickets = ref([]);
-    const etiquetas = ref([]);
-    const kanbanContainer = ref(null);
-    const selectedTicket = ref(null);
-    const showTicketDetails = ref(false);
-    let root = null;
-    let socket = null;
+  setup () {
+    const userProfile = ref('user')
+    const tickets = ref([])
+    const etiquetas = ref([])
+    const kanbanContainer = ref(null)
+    const selectedTicket = ref(null)
+    const showTicketDetails = ref(false)
+    let root = null
+    let socket = null
 
     const fetchData = async () => {
       try {
-        await Promise.all([fetchTickets(), fetchEtiquetas()]);
-        renderKanbanBoard();
+        await Promise.all([fetchTickets(), fetchEtiquetas()])
+        renderKanbanBoard()
       } catch (error) {
-        console.error('Erro ao buscar dados:', error);
+        console.error('Erro ao buscar dados:', error)
       }
-    };
+    }
 
     const fetchTickets = async () => {
       const params = {
@@ -85,43 +85,43 @@ export default defineComponent({
         showAll: true,
         includeNotQueueDefined: true,
         includeTags: true
-      };
+      }
       try {
-        const { data } = await ConsultarTickets(params);
+        const { data } = await ConsultarTickets(params)
         tickets.value = data.tickets.map(ticket => ({
           ...ticket,
           priority: getPriority(ticket),
           assignee: getAssignee(ticket)
-        }));
+        }))
       } catch (error) {
-        console.error('Erro ao buscar tickets:', error);
+        console.error('Erro ao buscar tickets:', error)
       }
-    };
+    }
 
     const fetchEtiquetas = async () => {
       try {
-        const { data } = await ListarEtiquetas(true);
-        etiquetas.value = data;
+        const { data } = await ListarEtiquetas(true)
+        etiquetas.value = data
       } catch (error) {
-        console.error('Erro ao buscar etiquetas:', error);
+        console.error('Erro ao buscar etiquetas:', error)
       }
-    };
+    }
 
     const getPriority = (ticket) => {
-      const waitTime = new Date() - new Date(ticket.createdAt);
-      if (waitTime > 24 * 60 * 60 * 1000) return 'Alta';
-      if (waitTime > 12 * 60 * 60 * 1000) return 'Média';
-      return 'Baixa';
-    };
+      const waitTime = new Date() - new Date(ticket.createdAt)
+      if (waitTime > 24 * 60 * 60 * 1000) return 'Alta'
+      if (waitTime > 12 * 60 * 60 * 1000) return 'Média'
+      return 'Baixa'
+    }
 
     const getAssignee = (ticket) => {
-      return ticket.assignedUser ? ticket.assignedUser.name : 'Não atribuído';
-    };
+      return ticket.assignedUser ? ticket.assignedUser.name : 'Não atribuído'
+    }
 
     const renderKanbanBoard = () => {
-      const container = kanbanContainer.value;
+      const container = kanbanContainer.value
       if (!root) {
-        root = ReactDOM.createRoot(container);
+        root = ReactDOM.createRoot(container)
       }
       root.render(
         React.createElement(KanbanBoard, {
@@ -130,65 +130,65 @@ export default defineComponent({
           onTicketMove: handleTicketMove,
           onTicketClick: handleTicketClick
         })
-      );
-    };
+      )
+    }
 
     const handleTicketMove = async (ticketId, newTagId) => {
       try {
-        const userId = localStorage.getItem('userId');
-        await AtualizarStatusTicketTag(ticketId, newTagId, userId);
+        const userId = localStorage.getItem('userId')
+        await AtualizarStatusTicketTag(ticketId, newTagId, userId)
         const updatedTickets = tickets.value.map(ticket => {
           if (ticket.id === ticketId) {
             return {
               ...ticket,
               tags: [etiquetas.value.find(tag => tag.id === newTagId)]
-            };
+            }
           }
-          return ticket;
-        });
-        tickets.value = updatedTickets;
-        renderKanbanBoard();
+          return ticket
+        })
+        tickets.value = updatedTickets
+        renderKanbanBoard()
       } catch (error) {
-        console.error('Erro ao mover o ticket:', error);
+        console.error('Erro ao mover o ticket:', error)
       }
-    };
+    }
 
     const handleTicketClick = (ticket) => {
-      selectedTicket.value = ticket;
-      showTicketDetails.value = true;
-    };
+      selectedTicket.value = ticket
+      showTicketDetails.value = true
+    }
 
     const setupWebSocket = () => {
-      socket = socketIO();
-      const tenantId = localStorage.getItem('tenantId');
+      socket = socketIO()
+      const tenantId = localStorage.getItem('tenantId')
 
       socket.on('connect', () => {
-        socket.emit(`${tenantId}:joinKanban`);
-      });
+        socket.emit(`${tenantId}:joinKanban`)
+      })
 
       socket.on(`${tenantId}:ticket`, (data) => {
         if (data.action === 'update' || data.action === 'create' || data.action === 'delete') {
-          fetchData();
+          fetchData()
         }
-      });
-    };
+      })
+    }
 
     onMounted(() => {
-      userProfile.value = localStorage.getItem('profile');
+      userProfile.value = localStorage.getItem('profile')
       if (userProfile.value === 'admin') {
-        fetchData();
-        setupWebSocket();
+        fetchData()
+        setupWebSocket()
       }
-    });
+    })
 
     onBeforeUnmount(() => {
       if (root) {
-        root.unmount();
+        root.unmount()
       }
       if (socket) {
-        socket.disconnect();
+        socket.disconnect()
       }
-    });
+    })
 
     return {
       userProfile,
@@ -197,9 +197,9 @@ export default defineComponent({
       handleTicketClick,
       selectedTicket,
       showTicketDetails
-    };
+    }
   }
-});
+})
 </script>
 
 <style lang="scss" scoped>

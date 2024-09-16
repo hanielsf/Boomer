@@ -80,7 +80,7 @@
 <script>
 import { date } from 'quasar'
 import VueApexCharts from 'vue-apexcharts'
-import { 
+import {
   GetDashTicketsAndTimes,
   GetDashTicketsChannels,
   GetDashTicketsEvolutionByPeriod,
@@ -90,9 +90,9 @@ import {
 export default {
   name: 'Dashboard',
   components: {
-    apexchart: VueApexCharts,
+    apexchart: VueApexCharts
   },
-  data() {
+  data () {
     return {
       isLoading: true,
       dateRange: {
@@ -116,13 +116,13 @@ export default {
     }
   },
   computed: {
-    currentTheme() {
+    currentTheme () {
       return this.$q.dark.isActive ? 'dark' : 'light'
     },
-    formatDateRange() {
+    formatDateRange () {
       return `${date.formatDate(this.dateRange.from, 'DD/MM/YYYY')} - ${date.formatDate(this.dateRange.to, 'DD/MM/YYYY')}`
     },
-    metrics() {
+    metrics () {
       return [
         {
           label: 'Total de Atendimentos',
@@ -166,7 +166,7 @@ export default {
         }
       ]
     },
-    channelDistributionOptions() {
+    channelDistributionOptions () {
       return {
         chart: { type: 'donut' },
         labels: this.dashData.channels.map(c => c.label),
@@ -188,10 +188,10 @@ export default {
         }
       }
     },
-    channelDistributionSeries() {
+    channelDistributionSeries () {
       return this.dashData.channels.map(c => c.qtd)
     },
-    attendanceEvolutionOptions() {
+    attendanceEvolutionOptions () {
       return {
         chart: { type: 'area', zoom: { enabled: false } },
         dataLabels: { enabled: false },
@@ -213,13 +213,13 @@ export default {
         }
       }
     },
-    attendanceEvolutionSeries() {
+    attendanceEvolutionSeries () {
       return [{
         name: 'Atendimentos',
         data: this.dashData.evolution.map(e => e.qtd)
       }]
     },
-    teamPerformanceColumns() {
+    teamPerformanceColumns () {
       return [
         { name: 'name', label: 'Atendente', field: 'name', sortable: true, align: 'left' },
         { name: 'qtd_resolvidos', label: 'Resolvidos', field: 'qtd_resolvidos', sortable: true, align: 'center' },
@@ -229,28 +229,28 @@ export default {
         { name: 'efficiency', label: 'Eficiência', field: row => ((row.qtd_resolvidos / 8) * 100).toFixed(1), sortable: true, align: 'center' }
       ]
     },
-    teamPerformance() {
+    teamPerformance () {
       return this.dashData.teamPerformance || []
     }
   },
   methods: {
-    formatDuration(timeObject) {
+    formatDuration (timeObject) {
       if (!timeObject || typeof timeObject !== 'object') return 'N/A'
       const { hours = 0, minutes = 0, seconds = 0 } = timeObject
       return `${hours}h ${minutes}m ${seconds}s`
     },
-    calculateProgress(timeObject) {
+    calculateProgress (timeObject) {
       if (!timeObject || typeof timeObject !== 'object') return 0
       const { hours = 0, minutes = 0, seconds = 0 } = timeObject
       const totalSeconds = hours * 3600 + minutes * 60 + seconds
       return Math.min(totalSeconds / (24 * 3600), 1) // Assume um máximo de 24 horas
     },
-    getProgressColor(value) {
+    getProgressColor (value) {
       if (value < 0.3) return 'negative'
       if (value < 0.7) return 'warning'
       return 'positive'
     },
-    async fetchDashboardData() {
+    async fetchDashboardData () {
       this.isLoading = true
       try {
         const [timesResponse, channelsResponse, evolutionResponse, usersResponse] = await Promise.all([
@@ -259,7 +259,7 @@ export default {
           GetDashTicketsEvolutionByPeriod({ startDate: date.formatDate(this.dateRange.from, 'YYYY-MM-DD'), endDate: date.formatDate(this.dateRange.to, 'YYYY-MM-DD') }),
           GetDashTicketsPerUsersDetail({ startDate: date.formatDate(this.dateRange.from, 'YYYY-MM-DD'), endDate: date.formatDate(this.dateRange.to, 'YYYY-MM-DD') })
         ])
-        
+
         const times = timesResponse.data[0]
         this.dashData = {
           ...this.dashData,
@@ -282,7 +282,7 @@ export default {
       }
     }
   },
-  mounted() {
+  mounted () {
     this.fetchDashboardData()
   },
   watch: {
