@@ -120,7 +120,7 @@ export default {
       return this.$q.dark.isActive ? 'dark' : 'light'
     },
     formatDateRange () {
-      return `${date.formatDate(this.dateRange.from, 'DD/MM/YYYY')} - ${date.formatDate(this.dateRange.to, 'DD/MM/YYYY')}`
+      return `${date.formatDate(this.ensureValidDate(this.dateRange.from), 'DD/MM/YYYY')} - ${date.formatDate(this.ensureValidDate(this.dateRange.to), 'DD/MM/YYYY')}`
     },
     metrics () {
       return [
@@ -196,7 +196,10 @@ export default {
         chart: { type: 'area', zoom: { enabled: false } },
         dataLabels: { enabled: false },
         stroke: { curve: 'smooth' },
-        xaxis: { type: 'datetime', categories: this.dashData.evolution.map(e => e.label) },
+        xaxis: {
+          type: 'datetime',
+          categories: this.dashData.evolution.map(e => this.ensureValidDate(e.label).getTime())
+        },
         theme: { mode: this.currentTheme },
         colors: ['#008FFB'],
         fill: {
@@ -236,12 +239,16 @@ export default {
   methods: {
     formatDuration (timeObject) {
       if (!timeObject || typeof timeObject !== 'object') return 'N/A'
-      const { hours = 0, minutes = 0, seconds = 0 } = timeObject
+      const hours = Number(timeObject.hours) || 0
+      const minutes = Number(timeObject.minutes) || 0
+      const seconds = Number(timeObject.seconds) || 0
       return `${hours}h ${minutes}m ${seconds}s`
     },
     calculateProgress (timeObject) {
       if (!timeObject || typeof timeObject !== 'object') return 0
-      const { hours = 0, minutes = 0, seconds = 0 } = timeObject
+      const hours = Number(timeObject.hours) || 0
+      const minutes = Number(timeObject.minutes) || 0
+      const seconds = Number(timeObject.seconds) || 0
       const totalSeconds = hours * 3600 + minutes * 60 + seconds
       return Math.min(totalSeconds / (24 * 3600), 1) // Assume um máximo de 24 horas
     },
@@ -253,11 +260,17 @@ export default {
     async fetchDashboardData () {
       this.isLoading = true
       try {
+        const startDate = this.ensureValidDate(this.dateRange.from)
+        const endDate = this.ensureValidDate(this.dateRange.to)
+
+        const formattedStartDate = date.formatDate(startDate, 'YYYY-MM-DD')
+        const formattedEndDate = date.formatDate(endDate, 'YYYY-MM-DD')
+
         const [timesResponse, channelsResponse, evolutionResponse, usersResponse] = await Promise.all([
-          GetDashTicketsAndTimes({ startDate: date.formatDate(this.dateRange.from, 'YYYY-MM-DD'), endDate: date.formatDate(this.dateRange.to, 'YYYY-MM-DD') }),
-          GetDashTicketsChannels({ startDate: date.formatDate(this.dateRange.from, 'YYYY-MM-DD'), endDate: date.formatDate(this.dateRange.to, 'YYYY-MM-DD') }),
-          GetDashTicketsEvolutionByPeriod({ startDate: date.formatDate(this.dateRange.from, 'YYYY-MM-DD'), endDate: date.formatDate(this.dateRange.to, 'YYYY-MM-DD') }),
-          GetDashTicketsPerUsersDetail({ startDate: date.formatDate(this.dateRange.from, 'YYYY-MM-DD'), endDate: date.formatDate(this.dateRange.to, 'YYYY-MM-DD') })
+          GetDashTicketsAndTimes({ startDate: formattedStartDate, endDate: formattedEndDate }),
+          GetDashTicketsChannels({ startDate: formattedStartDate, endDate: formattedEndDate }),
+          GetDashTicketsEvolutionByPeriod({ startDate: formattedStartDate, endDate: formattedEndDate }),
+          GetDashTicketsPerUsersDetail({ startDate: formattedStartDate, endDate: formattedEndDate })
         ])
 
         const times = timesResponse.data[0]
@@ -272,14 +285,23 @@ export default {
         console.log('TMA:', this.dashData.tma, 'TME:', this.dashData.tme) // Para depuração
       } catch (error) {
         console.error('Erro ao carregar dados do dashboard:', error)
-        if (this.$q && this.$q.notify) {
-          this.$q.notify({ type: 'negative', message: 'Erro ao carregar dados do dashboard' })
-        } else {
-          alert('Erro ao carregar dados do dashboard')
-        }
+        this.$q.notify({ type: 'negative', message: 'Erro ao carregar dados do dashboard' })
       } finally {
         this.isLoading = false
       }
+    },
+    ensureValidDate (dateValue) {
+      if (dateValue instanceof Date && !isNaN(dateValue)) {
+        return dateValue
+      }
+      if (typeof dateValue === 'string') {
+        const parsedDate = new Date(dateValue)
+        if (!isNaN(parsedDate)) {
+          return parsedDate
+        }
+      }
+      console.warn('Data inválida detectada, usando a data atual como fallback')
+      return new Date()
     }
   },
   mounted () {
@@ -325,35 +347,10 @@ export default {
 .performance-table {
   .q-table__top,
   .q-table__bottom,
-  thead tr:first-child th {
-    background-color: #f5f5f5;
-  }
-  thead tr th {
-    position: sticky;
-    z-index: 1;
-  }
-  thead tr:first-child th {
-    top: 0;
-  }
-}
-
-:root {
-  --card-bg: #ffffff;
-  --text-color: #333333;
-}
-
-.body--dark {
-  --card-bg: #1e1e1e;
-  --text-color: #ffffff;
-
-  .performance-table {
-    .q-table__top,
-    .q-table__bottom,
-    thead tr:first-child th {
+  thead tr:first--child th {
       background-color: #2a2a2a;
     }
   }
-}
 
 .q-card {
   background-color: var(--card-bg);
