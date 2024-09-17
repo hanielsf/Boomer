@@ -136,7 +136,7 @@ const ListTicketsService = async ({
   LIMIT :limit OFFSET :offset 
   `;
 
-  const limit = 30;
+  const limit = 3000;
   const offset = limit * (+pageNumber - 1);
 
   const tickets: any = await Ticket.sequelize?.query(query, {
