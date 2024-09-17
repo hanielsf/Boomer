@@ -112,7 +112,7 @@ import { ListarFilas } from 'src/service/filas'
 export default {
   name: 'PainelDeControle',
   components: { ItemTicket },
-  setup() {
+  setup () {
     const userProfile = ref(localStorage.getItem('profile'))
     const profile = ref(localStorage.getItem('profile'))
     const visualizarFiltros = ref(false)
@@ -177,7 +177,7 @@ export default {
       const open = filteredTickets.value.filter(t => t.status === 'open').length
       const pending = filteredTickets.value.filter(t => t.status === 'pending').length
       const closed = filteredTickets.value.filter(t => t.status === 'closed').length
-      
+
       return [
         { label: 'Total de Tickets', value: total, progress: 1 },
         { label: 'Tickets Abertos', value: open, progress: open / total },
@@ -186,7 +186,7 @@ export default {
       ]
     })
 
-    function counterStatus(tickets) {
+    function counterStatus (tickets) {
       const status = { open: 0, pending: 0, closed: 0 }
       tickets.forEach(ticket => {
         status[ticket.status]++
@@ -194,20 +194,20 @@ export default {
       return status
     }
 
-    function isPendente(item) {
+    function isPendente (item) {
       return !item.user || item.status === 'pending'
     }
 
-    function getHeaderTitle(item) {
+    function getHeaderTitle (item) {
       return visao.value.startsWith('U') ? (item.user?.name || 'Não Atribuído') : (filas.value.find(f => f.id === item.queueId)?.queue || 'Sem Fila')
     }
 
-    function getHeaderSubtitle(items) {
+    function getHeaderSubtitle (items) {
       const status = counterStatus(items)
       return `Abertos: ${status.open} | Pendentes: ${status.pending} | Total: ${items.length}`
     }
 
-    async function consultarTickets() {
+    async function consultarTickets () {
       try {
         const res = await ConsultarTicketsQueuesService(pesquisaTickets.value)
         tickets.value = res.data
@@ -223,7 +223,7 @@ export default {
       }
     }
 
-    function applyFilters() {
+    function applyFilters () {
       pesquisaTickets.value.dateStart = date.formatDate(dateRange.value.from, 'YYYY-MM-DD')
       pesquisaTickets.value.dateEnd = date.formatDate(dateRange.value.to, 'YYYY-MM-DD')
       consultarTickets()
