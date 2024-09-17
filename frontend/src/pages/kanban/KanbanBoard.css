@@ -268,3 +268,103 @@ body.body--dark .column-header {
   background-color: var(--q-primary);
   border-radius: 20px;
 }
+
+.kanban-board {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px);
+  padding: 1rem;
+  background-color: var(--q-dark);
+  color: var(--q-light);
+  overflow: hidden; /* Previne rolagem na board principal */
+}
+
+.kanban-columns {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 1rem;
+  flex-grow: 1;
+  cursor: grab; /* Adiciona o cursor de "mão" para indicar que pode ser arrastado */
+}
+
+.kanban-columns:active {
+  cursor: grabbing; /* Muda o cursor quando está arrastando */
+}
+
+.kanban-board {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px);
+  padding: 1rem;
+  background-color: var(--q-dark);
+  color: var(--q-light);
+  overflow: hidden;
+}
+
+.kanban-columns {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 1rem;
+  flex-grow: 1;
+  cursor: grab;
+  user-select: none; /* Previne seleção de texto durante o arraste */
+}
+
+.kanban-columns:active {
+  cursor: grabbing;
+}
+
+.kanban-column {
+  background: var(--q-dark);
+  border-radius: 0.5rem;
+  min-width: 300px;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  max-height: 100%;
+  flex-shrink: 0; /* Previne que as colunas encolham */
+}
+
+.column-content {
+  padding: 1rem;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.column-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.column-content::-webkit-scrollbar-track {
+  background: var(--q-dark);
+}
+
+.column-content::-webkit-scrollbar-thumb {
+  background-color: var(--q-primary);
+  border-radius: 20px;
+}
+
+.kanban-columns::after {
+  content: '⇄';
+  position: sticky;
+  right: 10px;
+  bottom: 10px;
+  background-color: var(--q-primary);
+  color: var(--q-light);
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 20px;
+  opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+  .kanban-column {
+    min-width: 250px;
+    width: 250px;
+  }
+}

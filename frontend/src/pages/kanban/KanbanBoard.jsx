@@ -1,12 +1,45 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Inbox, Clock, Coffee, CheckCircle, Search, Filter, X, User, Calendar } from 'lucide-react';
 import './KanbanBoard.css';
+
+// Função para habilitar o arraste horizontal
+const enableHorizontalDrag = (element) => {
+  if (!element) return;
+
+  let isDragging = false;
+  let startX;
+  let scrollLeft;
+
+  const startDragging = (e) => {
+    isDragging = true;
+    startX = e.pageX - element.offsetLeft;
+    scrollLeft = element.scrollLeft;
+  };
+
+  const drag = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - element.offsetLeft;
+    const walk = (x - startX) * 2;
+    element.scrollLeft = scrollLeft - walk;
+  };
+
+  const stopDragging = () => {
+    isDragging = false;
+  };
+
+  element.addEventListener('mousedown', startDragging);
+  element.addEventListener('mousemove', drag);
+  element.addEventListener('mouseup', stopDragging);
+  element.addEventListener('mouseleave', stopDragging);
+};
 
 const KanbanBoard = ({ tickets, tags, onTicketMove, onTicketClick }) => {
   const [columns, setColumns] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({ priority: '', assignee: '' });
+  const kanbanColumnsRef = useRef(null);
 
   const getColumnIcon = (columnId) => {
     switch(columnId) {
@@ -53,6 +86,9 @@ const KanbanBoard = ({ tickets, tags, onTicketMove, onTicketClick }) => {
 
   useEffect(() => {
     initializeColumns();
+    if (kanbanColumnsRef.current) {
+      enableHorizontalDrag(kanbanColumnsRef.current);
+    }
   }, [initializeColumns]);
 
   const filteredTickets = useMemo(() => {
@@ -176,7 +212,7 @@ const KanbanBoard = ({ tickets, tags, onTicketMove, onTicketClick }) => {
   };
 
   const truncateText = (text, maxLength) => {
-    if (!text) return ''; // Verifica se o texto está definido
+    if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substr(0, maxLength) + '...';
   };
@@ -237,7 +273,7 @@ const KanbanBoard = ({ tickets, tags, onTicketMove, onTicketClick }) => {
         </div>
       )}
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className="kanban-columns">
+        <div className="kanban-columns" ref={kanbanColumnsRef}>
           {Object.values(columns).map(column => (
             <Droppable key={column.id} droppableId={column.id.toString()}>
               {(provided) => (
@@ -265,7 +301,7 @@ const KanbanBoard = ({ tickets, tags, onTicketMove, onTicketClick }) => {
                             </Draggable>
                           );
                         })}
-                      {provided.placeholder}
+                    {provided.placeholder}
                   </div>
                 </div>
               )}
