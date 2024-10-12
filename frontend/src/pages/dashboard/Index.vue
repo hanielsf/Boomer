@@ -1,54 +1,95 @@
 <template>
   <q-page class="dashboard q-pa-md">
-    <div class="row items-center justify-between q-mb-md">
-      <h1 class="text-h4 text-weight-bold">Visão Geral de Atendimentos</h1>
+    <div class="row items-center justify-between q-mb-lg">
+      <h1 class="text-h4 text-weight-bold">Central de Inteligência Operacional</h1>
       <q-btn-dropdown color="primary" :label="formatDateRange" class="date-picker">
         <q-date v-model="dateRange" range minimal />
       </q-btn-dropdown>
     </div>
 
     <div v-if="isLoading" class="fullscreen flex flex-center">
-      <q-spinner color="primary" size="3em" />
+      <q-spinner-dots color="primary" size="5em" />
     </div>
 
     <template v-else>
-      <div class="row q-col-gutter-md q-mb-md">
-        <div v-for="metric in metrics" :key="metric.label" class="col-xs-12 col-sm-6 col-md-3">
+      <div class="row q-col-gutter-md q-mb-lg">
+        <div v-for="metric in metricasAvancadas" :key="metric.label" class="col-xs-12 col-sm-6 col-md-3">
           <q-card class="metric-card">
             <q-card-section>
-              <div class="text-subtitle1 text-grey">{{ metric.label }}</div>
-              <div class="text-h4 text-weight-bold q-mt-sm">{{ metric.value }}</div>
+              <div class="row items-center no-wrap">
+                <div class="col">
+                  <div class="text-subtitle2 text-weight-medium">{{ metric.label }}</div>
+                  <div class="text-h5 text-weight-bold q-mt-sm">{{ metric.value }}</div>
+                </div>
+                <q-icon :name="metric.icon" size="48px" :class="$q.dark.isActive ? 'text-white' : 'text-primary'" />
+              </div>
               <q-linear-progress
                 :value="metric.progress"
                 class="q-mt-sm"
-                size="10px"
-                :color="getProgressColor(metric.progress)"
+                size="4px"
+                :color="metric.color"
               />
             </q-card-section>
           </q-card>
         </div>
       </div>
 
-      <div class="row q-col-gutter-md">
-        <div class="col-xs-12 col-md-6">
+      <div class="row q-col-gutter-md q-mb-lg">
+        <div class="col-xs-12 col-sm-6 col-md-3">
           <q-card class="chart-card">
             <q-card-section>
-              <div class="text-h6 text-weight-bold">Distribuição por Canal</div>
-              <apexchart type="donut" height="300" :options="channelDistributionOptions" :series="channelDistributionSeries" />
+              <div class="text-h6 text-weight-bold q-mb-md">Evolução de Atendimentos</div>
+              <apexchart
+                type="area"
+                height="200"
+                :options="evolucaoAtendimentosOptions"
+                :series="evolucaoAtendimentosSeries"
+              />
             </q-card-section>
           </q-card>
         </div>
-        <div class="col-xs-12 col-md-6">
+        <div class="col-xs-12 col-sm-6 col-md-3">
           <q-card class="chart-card">
             <q-card-section>
-              <div class="text-h6 text-weight-bold">Evolução de Atendimentos</div>
-              <apexchart type="area" height="300" :options="attendanceEvolutionOptions" :series="attendanceEvolutionSeries" />
+              <div class="text-h6 text-weight-bold q-mb-md">Distribuição por Canal</div>
+              <apexchart
+                type="pie"
+                height="200"
+                :options="distribuicaoCanalOptions"
+                :series="distribuicaoCanalSeries"
+              />
+            </q-card-section>
+          </q-card>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-3">
+          <q-card class="chart-card">
+            <q-card-section>
+              <div class="text-h6 text-weight-bold q-mb-md">Tempo Médio Atendimento</div>
+              <apexchart
+                type="bar"
+                height="200"
+                :options="tmaOptions"
+                :series="tmaSeries"
+              />
+            </q-card-section>
+          </q-card>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-3">
+          <q-card class="chart-card">
+            <q-card-section>
+              <div class="text-h6 text-weight-bold q-mb-md">Satisfação do Cliente</div>
+              <apexchart
+                type="radialBar"
+                height="200"
+                :options="satisfacaoOptions"
+                :series="satisfacaoSeries"
+              />
             </q-card-section>
           </q-card>
         </div>
       </div>
 
-      <q-card class="q-mt-md">
+      <q-card class="performance-table-card q-mb-lg">
         <q-card-section>
           <div class="text-h6 text-weight-bold q-mb-md">Desempenho da Equipe</div>
           <q-table
@@ -65,7 +106,7 @@
                 <q-linear-progress
                   :value="props.value / 100"
                   size="xs"
-                  :color="getProgressColor(props.value / 100)"
+                  :color="getEfficiencyColor(props.value)"
                 />
                 <span class="q-ml-sm">{{ props.value }}%</span>
               </q-td>
@@ -88,7 +129,7 @@ import {
 } from 'src/service/estatisticas'
 
 export default {
-  name: 'Dashboard',
+  name: 'DashboardRevolucionario',
   components: {
     apexchart: VueApexCharts
   },
@@ -107,101 +148,48 @@ export default {
         new_contacts: 0,
         satisfacao: 0,
         qtd_pendentes: 0,
-        qtd_atendentes: 1, // Para evitar divisão por zero
+        qtd_atendentes: 1,
         channels: [],
-        evolution: [],
-        teamPerformance: []
+        evolution: []
       },
-      pagination: { rowsPerPage: 10 }
+      teamPerformance: [],
+      pagination: { rowsPerPage: 10 },
+      metricasAvancadas: []
     }
   },
   computed: {
-    currentTheme () {
-      return this.$q.dark.isActive ? 'dark' : 'light'
-    },
     formatDateRange () {
       return `${date.formatDate(this.ensureValidDate(this.dateRange.from), 'DD/MM/YYYY')} - ${date.formatDate(this.ensureValidDate(this.dateRange.to), 'DD/MM/YYYY')}`
     },
-    metrics () {
-      return [
-        {
-          label: 'Total de Atendimentos',
-          value: this.dashData.qtd_total_atendimentos,
-          progress: this.dashData.qtd_total_atendimentos / 1000 // Ajuste conforme necessário
-        },
-        {
-          label: 'Tempo Médio de Atendimento',
-          value: this.formatDuration(this.dashData.tma),
-          progress: this.calculateProgress(this.dashData.tma)
-        },
-        {
-          label: 'Taxa de Resolução',
-          value: `${((this.dashData.qtd_resolvidos / this.dashData.qtd_total_atendimentos) * 100).toFixed(1)}%`,
-          progress: this.dashData.qtd_resolvidos / (this.dashData.qtd_total_atendimentos || 1)
-        },
-        {
-          label: 'Novos Contatos',
-          value: this.dashData.new_contacts,
-          progress: this.dashData.new_contacts / 1000 // Ajuste conforme necessário
-        },
-        {
-          label: 'Satisfação do Cliente',
-          value: `${(this.dashData.satisfacao * 100).toFixed(1)}%`,
-          progress: this.dashData.satisfacao
-        },
-        {
-          label: 'Tempo Médio de Espera',
-          value: this.formatDuration(this.dashData.tme),
-          progress: this.calculateProgress(this.dashData.tme)
-        },
-        {
-          label: 'Atendimentos Pendentes',
-          value: this.dashData.qtd_pendentes,
-          progress: this.dashData.qtd_pendentes / (this.dashData.qtd_total_atendimentos || 1)
-        },
-        {
-          label: 'Eficiência da Equipe',
-          value: `${((this.dashData.qtd_resolvidos / this.dashData.qtd_atendentes) / 8).toFixed(1)}`,
-          progress: (this.dashData.qtd_resolvidos / this.dashData.qtd_atendentes) / 20 // Ajuste conforme necessário
-        }
-      ]
-    },
-    channelDistributionOptions () {
+    evolucaoAtendimentosOptions () {
       return {
-        chart: { type: 'donut' },
-        labels: this.dashData.channels.map(c => c.label),
-        theme: { mode: this.currentTheme },
-        responsive: [{ breakpoint: 480, options: { chart: { width: 200 }, legend: { position: 'bottom' } } }],
-        colors: ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],
-        plotOptions: {
-          pie: {
-            donut: {
-              labels: {
-                show: true,
-                total: {
-                  showAlways: true,
-                  show: true
-                }
-              }
-            }
+        chart: {
+          type: 'area',
+          height: 200,
+          toolbar: {
+            show: false
           }
-        }
-      }
-    },
-    channelDistributionSeries () {
-      return this.dashData.channels.map(c => c.qtd)
-    },
-    attendanceEvolutionOptions () {
-      return {
-        chart: { type: 'area', zoom: { enabled: false } },
-        dataLabels: { enabled: false },
-        stroke: { curve: 'smooth' },
+        },
+        dataLabels: {
+          enabled: false
+        },
+        stroke: {
+          curve: 'smooth'
+        },
         xaxis: {
           type: 'datetime',
-          categories: this.dashData.evolution.map(e => this.ensureValidDate(e.label).getTime())
+          categories: this.dashData.evolution.map(e => new Date(e.label).getTime())
         },
-        theme: { mode: this.currentTheme },
-        colors: ['#008FFB'],
+        yaxis: {
+          title: {
+            text: 'Atendimentos'
+          }
+        },
+        tooltip: {
+          x: {
+            format: 'dd MMM yyyy'
+          }
+        },
         fill: {
           type: 'gradient',
           gradient: {
@@ -211,29 +199,120 @@ export default {
             stops: [0, 90, 100]
           }
         },
-        grid: {
-          borderColor: this.currentTheme === 'dark' ? '#4b5563' : '#e5e7eb'
+        theme: {
+          mode: this.$q.dark.isActive ? 'dark' : 'light'
         }
       }
     },
-    attendanceEvolutionSeries () {
+    evolucaoAtendimentosSeries () {
       return [{
         name: 'Atendimentos',
         data: this.dashData.evolution.map(e => e.qtd)
       }]
     },
+    distribuicaoCanalOptions () {
+      return {
+        chart: {
+          type: 'pie',
+          height: 200
+        },
+        labels: this.dashData.channels.map(c => c.label),
+        responsive: [{
+          breakpoint: 480,
+          options: {
+            chart: {
+              width: 200
+            },
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }],
+        theme: {
+          mode: this.$q.dark.isActive ? 'dark' : 'light'
+        }
+      }
+    },
+    distribuicaoCanalSeries () {
+      return this.dashData.channels.map(c => c.qtd)
+    },
+    tmaOptions () {
+      return {
+        chart: {
+          type: 'bar',
+          height: 200
+        },
+        plotOptions: {
+          bar: {
+            horizontal: true
+          }
+        },
+        dataLabels: {
+          enabled: false
+        },
+        xaxis: {
+          categories: this.dashData.channels.map(c => c.label)
+        },
+        yaxis: {
+          title: {
+            text: 'Tempo Médio (minutos)'
+          }
+        },
+        theme: {
+          mode: this.$q.dark.isActive ? 'dark' : 'light'
+        }
+      }
+    },
+    tmaSeries () {
+      return [{
+        data: this.dashData.channels.map(c => this.calculateTotalMinutes(c.tma || {}))
+      }]
+    },
+    satisfacaoOptions () {
+      return {
+        chart: {
+          height: 200,
+          type: 'radialBar'
+        },
+        plotOptions: {
+          radialBar: {
+            hollow: {
+              size: '70%'
+            },
+            dataLabels: {
+              name: {
+                fontSize: '22px'
+              },
+              value: {
+                fontSize: '16px'
+              },
+              total: {
+                show: true,
+                label: 'Satisfação',
+                formatter: function (w) {
+                  return (w.globals.seriesTotals.reduce((a, b) => a + b, 0) / w.globals.series.length).toFixed(1) + '%'
+                }
+              }
+            }
+          }
+        },
+        labels: ['Satisfação'],
+        theme: {
+          mode: this.$q.dark.isActive ? 'dark' : 'light'
+        }
+      }
+    },
+    satisfacaoSeries () {
+      return [(this.dashData.satisfacao * 100).toFixed(1)]
+    },
     teamPerformanceColumns () {
       return [
-        { name: 'name', label: 'Atendente', field: 'name', sortable: true, align: 'left' },
-        { name: 'qtd_resolvidos', label: 'Resolvidos', field: 'qtd_resolvidos', sortable: true, align: 'center' },
-        { name: 'qtd_pendentes', label: 'Pendentes', field: 'qtd_pendentes', sortable: true, align: 'center' },
-        { name: 'tma', label: 'TMA', field: 'tma', format: this.formatDuration, sortable: true, align: 'center' },
-        { name: 'tme', label: 'TME', field: 'tme', format: this.formatDuration, sortable: true, align: 'center' },
-        { name: 'efficiency', label: 'Eficiência', field: row => ((row.qtd_resolvidos / 8) * 100).toFixed(1), sortable: true, align: 'center' }
+        { name: 'name', align: 'left', label: 'Atendente', field: 'name', sortable: true },
+        { name: 'qtd_resolvidos', align: 'center', label: 'Resolvidos', field: 'qtd_resolvidos', sortable: true },
+        { name: 'qtd_pendentes', align: 'center', label: 'Pendentes', field: 'qtd_pendentes', sortable: true },
+        { name: 'tma', align: 'center', label: 'TMA', field: 'tma', format: this.formatDuration, sortable: true },
+        { name: 'efficiency', align: 'center', label: 'Eficiência', field: row => ((row.qtd_resolvidos / (row.qtd_resolvidos + row.qtd_pendentes)) * 100).toFixed(1), sortable: true }
       ]
-    },
-    teamPerformance () {
-      return this.dashData.teamPerformance || []
     }
   },
   methods: {
@@ -244,17 +323,21 @@ export default {
       const seconds = Number(timeObject.seconds) || 0
       return `${hours}h ${minutes}m ${seconds}s`
     },
-    calculateProgress (timeObject) {
+    calculateTotalMinutes (timeObject) {
       if (!timeObject || typeof timeObject !== 'object') return 0
       const hours = Number(timeObject.hours) || 0
       const minutes = Number(timeObject.minutes) || 0
       const seconds = Number(timeObject.seconds) || 0
-      const totalSeconds = hours * 3600 + minutes * 60 + seconds
-      return Math.min(totalSeconds / (24 * 3600), 1) // Assume um máximo de 24 horas
+      return Math.round((hours * 60) + minutes + (seconds / 60))
     },
-    getProgressColor (value) {
-      if (value < 0.3) return 'negative'
-      if (value < 0.7) return 'warning'
+    calculateProgress (timeObject) {
+      if (!timeObject || typeof timeObject !== 'object') return 0
+      const totalMinutes = this.calculateTotalMinutes(timeObject)
+      return Math.min(totalMinutes / (24 * 60), 1) // Assumindo um máximo de 24 horas
+    },
+    getEfficiencyColor (value) {
+      if (value < 30) return 'negative'
+      if (value < 70) return 'warning'
       return 'positive'
     },
     async fetchDashboardData () {
@@ -278,14 +361,19 @@ export default {
           ...this.dashData,
           ...times,
           channels: channelsResponse.data,
-          evolution: evolutionResponse.data,
-          teamPerformance: usersResponse.data
+          evolution: evolutionResponse.data
         }
+        this.teamPerformance = usersResponse.data
 
-        console.log('TMA:', this.dashData.tma, 'TME:', this.dashData.tme) // Para depuração
+        this.calculateAdvancedMetrics()
       } catch (error) {
         console.error('Erro ao carregar dados do dashboard:', error)
-        this.$q.notify({ type: 'negative', message: 'Erro ao carregar dados do dashboard' })
+        this.$q.notify({
+          type: 'negative',
+          message: 'Ocorreu um erro ao carregar os dados do dashboard. Por favor, tente novamente mais tarde.',
+          position: 'top',
+          timeout: 5000
+        })
       } finally {
         this.isLoading = false
       }
@@ -302,6 +390,48 @@ export default {
       }
       console.warn('Data inválida detectada, usando a data atual como fallback')
       return new Date()
+    },
+    calculateAdvancedMetrics () {
+      this.metricasAvancadas = [
+        {
+          label: 'Total de Atendimentos',
+          value: this.dashData.qtd_total_atendimentos.toLocaleString(),
+          progress: this.dashData.qtd_total_atendimentos / 1000,
+          icon: 'support_agent',
+          color: 'primary'
+        },
+        {
+          label: 'Taxa de Resolução',
+          value: `${((this.dashData.qtd_resolvidos / this.dashData.qtd_total_atendimentos) * 100).toFixed(1)}%`,
+          progress: this.dashData.qtd_resolvidos / (this.dashData.qtd_total_atendimentos || 1),
+          icon: 'check_circle',
+          color: 'positive'
+        },
+        {
+          label: 'Tempo Médio Atendimento',
+          value: this.formatDuration(this.dashData.tma),
+          progress: this.calculateProgress(this.dashData.tma),
+          icon: 'schedule',
+          color: 'warning'
+        },
+        {
+          label: 'Novos Contatos',
+          value: this.dashData.new_contacts.toLocaleString(),
+          progress: this.dashData.new_contacts / 1000,
+          icon: 'person_add',
+          color: 'secondary'
+        }
+      ]
+    },
+    updateChartThemes (isDark) {
+      const theme = {
+        mode: isDark ? 'dark' : 'light',
+        palette: 'palette1'
+      }
+      this.evolucaoAtendimentosOptions.theme = theme
+      this.distribuicaoCanalOptions.theme = theme
+      this.tmaOptions.theme = theme
+      this.satisfacaoOptions.theme = theme
     }
   },
   mounted () {
@@ -311,6 +441,12 @@ export default {
     dateRange: {
       handler: 'fetchDashboardData',
       deep: true
+    },
+    '$q.dark.isActive': {
+      handler (isDark) {
+        this.updateChartThemes(isDark)
+      },
+      immediate: true
     }
   }
 }
@@ -318,42 +454,170 @@ export default {
 
 <style lang="scss">
 .dashboard {
-  max-width: 1400px;
-  margin: 0 auto;
-}
+  .metric-card {
+    height: 100%;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    overflow: hidden;
 
-.metric-card {
-  height: 100%;
-  transition: all 0.3s ease;
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  }
-}
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
 
-.chart-card {
-  transition: all 0.3s ease;
-  &:hover {
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  }
-}
+    .q-card__section {
+      padding: 16px;
+    }
 
-.date-picker {
-  .q-btn-dropdown__arrow {
-    margin-left: 8px;
-  }
-}
+    .text-subtitle2 {
+      opacity: 0.8;
+    }
 
-.performance-table {
-  .q-table__top,
-  .q-table__bottom,
-  thead tr:first--child th {
-      background-color: #2a2a2a;
+    .text-h5 {
+      margin-top: 8px;
+      margin-bottom: 12px;
+    }
+
+    .q-linear-progress {
+      height: 4px;
+      border-radius: 2px;
     }
   }
 
-.q-card {
-  background-color: var(--card-bg);
-  color: var(--text-color);
+  .chart-card {
+    height: 100%;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    overflow: hidden;
+
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .q-card__section {
+      padding: 16px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .text-h6 {
+      margin-bottom: 8px;
+    }
+
+    .apexcharts-canvas {
+      margin: auto;
+    }
+  }
+
+  .performance-table-card {
+    border-radius: 12px;
+    overflow: hidden;
+
+    .q-table__container {
+      border-radius: 12px;
+    }
+
+    .q-table {
+      th {
+        font-weight: bold;
+      }
+
+      td {
+        padding: 8px 16px;
+      }
+    }
+  }
+
+  .date-picker {
+    .q-btn {
+      padding: 8px 16px;
+      font-weight: 500;
+    }
+  }
+}
+
+// Estilos para tema claro
+.body--light {
+  .dashboard {
+    .metric-card {
+      background-color: #f5f5f5;
+      color: #000;
+    }
+
+    .chart-card,
+    .performance-table-card {
+      background-color: #fff;
+      color: #000;
+    }
+
+    .q-table {
+      th {
+        background-color: #f5f5f5;
+        color: #000;
+      }
+      td {
+        color: #000;
+      }
+    }
+  }
+}
+
+// Estilos para tema escuro
+.body--dark {
+  .dashboard {
+    .metric-card {
+      background-color: #1d1d1d;
+      color: #fff;
+
+      .text-subtitle2 {
+        color: rgba(255, 255, 255, 0.7);
+      }
+    }
+
+    .chart-card,
+    .performance-table-card {
+      background-color: #2d2d2d;
+      color: #fff;
+    }
+
+    .q-table {
+      th {
+        background-color: #1d1d1d;
+        color: #fff;
+      }
+      td {
+        color: #fff;
+      }
+    }
+  }
+}
+
+// Estilos responsivos
+@media (max-width: 1023px) {
+  .dashboard {
+    .chart-card {
+      margin-bottom: 16px;
+    }
+  }
+}
+
+@media (max-width: 599px) {
+  .dashboard {
+    .metric-card,
+    .chart-card,
+    .performance-table-card {
+      margin-bottom: 16px;
+    }
+
+    .text-h4 {
+      font-size: 1.8rem;
+    }
+
+    .text-h6 {
+      font-size: 1.1rem;
+    }
+  }
 }
 </style>

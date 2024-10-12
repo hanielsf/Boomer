@@ -364,9 +364,7 @@
                   class="q-mx-xs q-pa-none"
                   :style="`opacity: ${item.status === 'CONNECTED' ? 1 : 0.2}`"
                   :icon="`img:${item.type}-logo.png`"
-                >
-                  <!-- :color="item.status === 'CONNECTED' ? 'positive' : 'negative'"
-                  :icon-right="item.status === 'CONNECTED' ? 'mdi-check-all' : 'mdi-alert-circle-outline'" -->
+                  >
                   <q-tooltip
                     max-height="300px"
                     content-class="bg-blue-1 text-body1 text-grey-9 hide-scrollbar"

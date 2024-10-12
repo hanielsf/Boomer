@@ -1,5 +1,5 @@
 <template>
-  <div v-if="userProfile === 'admin'">
+  <div>
     <q-page class="kanban-page">
       <div class="row q-pa-md">
         <div class="col-12">
@@ -16,7 +16,7 @@
         </q-card-section>
 
         <q-card-section v-if="selectedTicket">
-          <p><strong>Contato:</strong> {{ selectedTicket.contact?.name || 'Nome não disponível' }}</p>
+          <p><strong>Contato:</strong> {{ selectedTicket.contact_name || 'Nome não disponível' }}</p>
           <p><strong>Última Mensagem:</strong> {{ selectedTicket.lastMessage }}</p>
           <p><strong>Prioridade:</strong> {{ selectedTicket.priority }}</p>
           <p><strong>Responsável:</strong> {{ selectedTicket.assignee }}</p>
@@ -40,11 +40,6 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
-  </div>
-  <div v-else>
-    <q-page class="flex flex-center">
-      <p>Você não tem permissão para acessar esta página.</p>
-    </q-page>
   </div>
 </template>
 

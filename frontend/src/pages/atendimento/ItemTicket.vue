@@ -11,7 +11,7 @@
       :class="{
         'ticketBorderGrey': !$q.dark.isActive,
         'ticket-active-item': ticket.id === $store.getters['ticketFocado'].id,
-        'ticketNotAnswered': ticket.answered == false && ticket.isGroup == false && ticket.status == 'open'
+        'ticketNotAnswered': ticket.answered == false && ticket.isGroup == false && ticket.status == 'open' || ticket.status == 'pending'
       }">
       <q-item-section avatar
         class="q-px-none">
