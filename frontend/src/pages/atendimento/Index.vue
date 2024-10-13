@@ -769,7 +769,6 @@
           </q-card-section>
         </q-card>
       </q-dialog>
-
     </q-layout>
     <audio ref="audioNotificationPlay">
       <source
@@ -1125,6 +1124,69 @@ export default {
       const { data } = await ConsultarLogsTicket({ ticketId: this.ticketFocado.id })
       this.logsTicket = data
       this.exibirModalLogs = true
+    },
+    initTypebot () {
+      const typebotInitScript = document.createElement('script')
+      typebotInitScript.type = 'module'
+      typebotInitScript.innerHTML = `
+        import Typebot from 'https://cdn.jsdelivr.net/npm/@typebot.io/js@0.3.20/dist/web.min.js'
+
+        Typebot.initBubble({
+          typebot: "gerar-001-rzmy8j2",
+          apiHost: "https://typechat.artfacas.online",
+          theme: {
+            button: {
+              backgroundColor: "#DE8031",
+              size: "large",
+              customIconSrc: "https://mback.artfacas.online/typebot/public/workspaces/clzdgdk3s000165t7rpsqw1gm/typebots/cm01c1jah0001i86pvrzmy8j2/bubble-icon?v=1728789064384",
+            },
+          },
+        });
+
+        // Função para tornar o botão arrastável
+        function makeDraggable(elmnt) {
+          let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+          
+          function dragMouseDown(e) {
+            e = e || window.event;
+            e.preventDefault();
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+          }
+
+          function elementDrag(e) {
+            e = e || window.event;
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+            elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+          }
+
+          function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+          }
+
+          elmnt.onmousedown = dragMouseDown;
+        }
+
+        // Espera o botão ser criado e então o torna arrastável
+        setTimeout(() => {
+          const typebotButton = document.querySelector('#typebot-bubble');
+          if (typebotButton) {
+            typebotButton.style.position = 'move';
+            typebotButton.style.cursor = 'move';
+            makeDraggable(typebotButton);
+          }
+        }, 1000);
+      `
+
+      document.body.append(typebotInitScript)
     }
   },
   beforeMount () {
@@ -1172,6 +1234,7 @@ export default {
       console.log('chat-empty')
       this.$router.push({ name: 'chat-empty' })
     }
+    this.initTypebot()
   },
   destroyed () {
     this.$root.$off('handlerNotifications', this.handlerNotifications)
@@ -1245,4 +1308,25 @@ export default {
 
 .tab-scroll
   white-space: nowrap
+</style>
+
+<style>
+  #typebot-bubble {
+    transition: all 0.3s ease;
+    z-index: 9999;
+  }
+
+  @media (max-width: 768px) {
+    #typebot-bubble {
+      width: 50px !important;
+      height: 50px !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    #typebot-bubble {
+      width: 40px !important;
+      height: 40px !important;
+    }
+  }
 </style>
